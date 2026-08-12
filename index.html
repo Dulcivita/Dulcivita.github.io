@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dulcivita · 地月系统 & 音乐</title>
+    <title>Dulcivitaの小窝</title>
     <style>
-        /* ----- 全局重置 ----- */
+/* 闲着没事看我源码干什么玩意儿啊 */
         * {
             margin: 0;
             padding: 0;
@@ -20,7 +20,7 @@
             height: 100vh;
         }
 
-        /* ----- Three.js 画布容器 ----- */
+        /*  Three.js 画布容器 */
         #canvas-container {
             position: fixed;
             top: 0;
@@ -30,7 +30,6 @@
             z-index: 0;
         }
 
-        /* ----- 加载屏幕 ----- */
         #loading-screen {
             position: fixed;
             top: 0;
@@ -198,7 +197,6 @@
             }
         }
 
-        /* ----- 导航栏 (固定顶层) ----- */
         .navbar {
             position: fixed;
             top: 0;
@@ -231,20 +229,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            color: #7fc8ff;
             box-shadow: 0 0 20px rgba(30, 144, 255, 0.08);
             transition: border-color 0.3s, box-shadow 0.3s;
-        }
-        .nav-icon:hover {
-            border-color: #7fc8ff;
-            box-shadow: 0 0 30px rgba(30, 144, 255, 0.18);
         }
         .nav-icon img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: block;
+        }
+        .nav-icon:hover {
+            border-color: #7fc8ff;
+            box-shadow: 0 0 30px rgba(30, 144, 255, 0.18);
         }
         .nav-title {
             font-size: 17px;
@@ -277,7 +273,6 @@
             border-bottom-color: rgba(80, 180, 255, 0.3);
         }
 
-        /* ----- 主界面内容 (覆盖层) ----- */
         #main-content {
             position: fixed;
             top: 0;
@@ -312,16 +307,16 @@
             opacity: 0.08;
         }
         .side-text .main-word {
-            font-size: clamp(18px, 3vw, 44px);
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            color: #d0e8ff;
-            text-shadow: 0 0 40px rgba(30, 144, 255, 0.15);
-            line-height: 1.3;
+            font-size: clamp(22px, 3.5vw, 52px);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #e8f4ff;
+            text-shadow: 0 0 50px rgba(30, 144, 255, 0.20);
+            line-height: 1.2;
         }
         .side-text .sub-word {
-            font-size: clamp(11px, 1.2vw, 18px);
-            letter-spacing: 0.08em;
+            font-size: clamp(12px, 1.3vw, 20px);
+            letter-spacing: 0.06em;
             color: rgba(160, 200, 255, 0.50);
             margin-top: 8px;
             font-weight: 300;
@@ -358,8 +353,7 @@
             user-select: none;
         }
 
-        /* ----- 音乐页面覆盖层 ----- */
-        #music-overlay {
+        #tools-overlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -374,80 +368,25 @@
             backdrop-filter: blur(8px);
             padding-top: 70px;
         }
-        #music-overlay.active {
+        #tools-overlay.active {
             display: flex;
+        }
+        .tools-content {
+            text-align: center;
+            color: rgba(176, 212, 255, 0.3);
+            letter-spacing: 0.2em;
+        }
+        .tools-content h2 {
+            font-size: 32px;
+            font-weight: 300;
+            margin-bottom: 12px;
+            color: rgba(176, 212, 255, 0.4);
+        }
+        .tools-content p {
+            font-size: 14px;
+            color: rgba(176, 212, 255, 0.2);
         }
 
-        #waveform-container {
-            width: 92vw;
-            max-width: 1400px;
-            height: 55vh;
-            min-height: 200px;
-            background: rgba(10, 20, 40, 0.4);
-            border-radius: 16px;
-            border: 1px solid rgba(60, 160, 255, 0.06);
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 0 60px rgba(30, 144, 255, 0.04);
-        }
-        #waveform-container canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        .music-controls {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            margin-top: 28px;
-            padding: 12px 32px;
-            background: rgba(10, 20, 40, 0.3);
-            border-radius: 40px;
-            border: 1px solid rgba(60, 160, 255, 0.08);
-            backdrop-filter: blur(2px);
-        }
-        #playBtn {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            border: 2px solid rgba(80, 180, 255, 0.3);
-            background: rgba(30, 144, 255, 0.08);
-            color: #b0d4ff;
-            font-size: 22px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Consolas', monospace;
-            flex-shrink: 0;
-        }
-        #playBtn:hover {
-            background: rgba(30, 144, 255, 0.18);
-            border-color: rgba(80, 180, 255, 0.6);
-            box-shadow: 0 0 30px rgba(30, 144, 255, 0.10);
-        }
-        #playBtn.playing {
-            border-color: rgba(247, 201, 72, 0.4);
-        }
-        .song-info {
-            display: flex;
-            flex-direction: column;
-        }
-        .song-name {
-            font-size: 16px;
-            color: #b0d4ff;
-            letter-spacing: 0.08em;
-        }
-        .song-status {
-            font-size: 11px;
-            color: rgba(160, 200, 255, 0.3);
-            letter-spacing: 0.06em;
-            margin-top: 2px;
-        }
-
-        /* ----- Game 页面覆盖层 ----- */
         #game-overlay {
             position: fixed;
             top: 0;
@@ -482,7 +421,6 @@
             color: rgba(176, 212, 255, 0.2);
         }
 
-        /* ----- 响应式 ----- */
         @media (max-width: 768px) {
             .navbar {
                 padding: 10px 16px;
@@ -490,7 +428,6 @@
             .nav-icon {
                 width: 32px;
                 height: 32px;
-                font-size: 14px;
             }
             .nav-title {
                 font-size: 14px;
@@ -507,26 +444,10 @@
                 max-width: 60%;
             }
             .side-text .main-word {
-                font-size: clamp(14px, 2.8vw, 28px);
+                font-size: clamp(16px, 3vw, 30px);
             }
             .side-text .sub-word {
-                font-size: clamp(8px, 1vw, 13px);
-            }
-            #waveform-container {
-                height: 40vh;
-                width: 96vw;
-            }
-            .music-controls {
-                gap: 14px;
-                padding: 10px 20px;
-            }
-            #playBtn {
-                width: 44px;
-                height: 44px;
-                font-size: 18px;
-            }
-            .song-name {
-                font-size: 13px;
+                font-size: clamp(9px, 1.1vw, 14px);
             }
             .status-hint {
                 display: none;
@@ -541,6 +462,10 @@
                 font-size: clamp(9px, 1.4vw, 16px);
                 padding: 3px 12px;
             }
+            .tools-content h2,
+            .game-content h2 {
+                font-size: 24px;
+            }
         }
         @media (max-width: 480px) {
             .navbar {
@@ -549,7 +474,6 @@
             .nav-icon {
                 width: 26px;
                 height: 26px;
-                font-size: 12px;
                 border-width: 1.5px;
             }
             .nav-title {
@@ -564,33 +488,12 @@
                 max-width: 70%;
             }
             .side-text .main-word {
-                font-size: clamp(11px, 2.5vw, 20px);
+                font-size: clamp(13px, 2.8vw, 22px);
             }
             .side-text .sub-word {
-                font-size: clamp(6px, 0.9vw, 10px);
+                font-size: clamp(7px, 1vw, 11px);
                 padding-top: 4px;
                 margin-top: 4px;
-            }
-            #waveform-container {
-                height: 30vh;
-                width: 98vw;
-                border-radius: 8px;
-            }
-            .music-controls {
-                gap: 10px;
-                padding: 8px 14px;
-                border-radius: 28px;
-            }
-            #playBtn {
-                width: 38px;
-                height: 38px;
-                font-size: 15px;
-            }
-            .song-name {
-                font-size: 11px;
-            }
-            .song-status {
-                font-size: 9px;
             }
             .binary-row-load {
                 font-size: clamp(4px, 1.3vw, 10px);
@@ -612,18 +515,23 @@
             .footer-deco-main {
                 display: none;
             }
+            .tools-content h2,
             .game-content h2 {
-                font-size: 22px;
+                font-size: 18px;
+            }
+            .tools-content p,
+            .game-content p {
+                font-size: 11px;
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- ====== Three.js 容器 ====== -->
+    <!-- Three.js 容器 -->
     <div id="canvas-container"></div>
 
-    <!-- ====== 加载屏幕 ====== -->
+    <!-- 加载屏幕 -->
     <div id="loading-screen">
         <div class="blob-bg"></div>
         <div class="loading-content">
@@ -634,50 +542,45 @@
         </div>
     </div>
 
-    <!-- ====== 导航栏 (固定顶层) ====== -->
     <nav class="navbar">
         <div class="nav-left" id="navHome">
-            <div class="nav-icon"><span style="font-size:16px; opacity:0.6;">✦</span></div>
+            <div class="nav-icon">
+                <img src="https://s41.ax1x.com/2026/08/04/pmoVvBn.jpg" alt="Dulcivita" />
+            </div>
             <span class="nav-title">Dulcivita</span>
         </div>
         <div class="nav-right">
             <span class="nav-item active" data-page="home">Home</span>
-            <span class="nav-item" data-page="music">Music</span>
+            <span class="nav-item" data-page="tools">Tools</span>
             <span class="nav-item" data-page="game">Game</span>
         </div>
     </nav>
 
-    <!-- ====== 主界面内容 ====== -->
+
     <div id="main-content">
         <div class="side-text" id="dynamicText">
-            <div class="main-word" id="mainWord">加载中...</div>
-            <div class="sub-word" id="subWord">超越全球 24% 的人！</div>
+            <div class="main-word" id="mainWord">欢迎来到 Dulcivita Club!!!</div>
+            <div class="sub-word" id="subWord">Welcome TO Dulcivita Club, Wish U Luck</div>
         </div>
         <div class="status-hint" id="statusHint">
-            <span id="motionStatus">● 运行中</span> &nbsp;·&nbsp; 点击 <span class="highlight">■</span> 正方体暂停
+            <span id="motionStatus"></span> &nbsp;·&nbsp;  <span class="highlight"></span> 
         </div>
         <div class="footer-deco-main">✦ 3D · 地月系统</div>
     </div>
 
-    <!-- ====== 音乐页面 ====== -->
-    <div id="music-overlay">
-        <div id="waveform-container">
-            <canvas id="waveform"></canvas>
-        </div>
-        <div class="music-controls">
-            <button id="playBtn">▶</button>
-            <div class="song-info">
-                <span class="song-name">crystalchime.mp3</span>
-                <span class="song-status" id="songStatus">就绪</span>
-            </div>
+    <!-- Tools -->
+    <div id="tools-overlay">
+        <div class="tools-content">
+            <h2>Tools</h2>
+            <p>？？？</p>
         </div>
     </div>
 
-    <!-- ====== Game 页面 ====== -->
+    <!-- Game -->
     <div id="game-overlay">
         <div class="game-content">
-            <h2>🎮 Game</h2>
-            <p>开发中 · 敬请期待</p>
+            <h2>Game</h2>
+            <p>给木给木给木压力大！</p>
         </div>
     </div>
 
@@ -692,9 +595,6 @@
     </script>
 
     <script type="module">
-        // ================================================================
-        //  1. 导入 & 场景
-        // ================================================================
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -721,7 +621,6 @@
         controls.maxDistance = 15;
         controls.update();
 
-        // --- 光源 ---
         const ambient = new THREE.AmbientLight(0x404060, 0.6);
         scene.add(ambient);
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -731,13 +630,9 @@
         fillLight.position.set(-2, 1, -3);
         scene.add(fillLight);
 
-        // ================================================================
-        //  2. 工具：带透视效果的经纬线球体
-        // ================================================================
-        function createPerspectiveSphere(radius, latSteps = 18, lonSteps = 24, baseColor = 0x5b9cf5, opacity = 0.9) {
+        function createPerspectiveSphere(radius, latSteps = 18, lonSteps = 24, color = 0x5b9cf5, baseOpacity = 0.92) {
             const positions = [];
             const indices = [];
-            // 生成顶点
             for (let i = 0; i <= latSteps; i++) {
                 const lat = -Math.PI / 2 + (i / latSteps) * Math.PI;
                 const sinLat = Math.sin(lat);
@@ -752,7 +647,6 @@
             }
             const cols = lonSteps + 1;
             const rows = latSteps + 1;
-            // 纬线
             for (let i = 0; i < rows; i++) {
                 for (let j = 0; j < lonSteps; j++) {
                     const idx1 = i * cols + j;
@@ -760,7 +654,6 @@
                     indices.push(idx1, idx2);
                 }
             }
-            // 经线
             for (let i = 0; i < latSteps; i++) {
                 for (let j = 0; j < cols; j++) {
                     const idx1 = i * cols + j;
@@ -773,108 +666,83 @@
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
             geometry.setIndex(indices);
 
-            const total = positions.length / 3;
-            const baseColorObj = new THREE.Color(baseColor);
-            // 初始颜色 (全亮)
-            const colors = new Float32Array(total * 3);
-            for (let i = 0; i < total; i++) {
-                colors[i * 3] = baseColorObj.r;
-                colors[i * 3 + 1] = baseColorObj.g;
-                colors[i * 3 + 2] = baseColorObj.b;
-            }
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            const baseColor = new THREE.Color(color);
 
-            const material = new THREE.LineBasicMaterial({
-                vertexColors: true,
+            // AI write de xiao cai dan
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    uCameraPos: { value: camera.position.clone() },
+                    uColor: { value: baseColor },
+                    uOpacity: { value: baseOpacity },
+                    uRadius: { value: radius },
+                },
+                vertexShader: `
+                    uniform vec3 uCameraPos;
+                    uniform float uRadius;
+                    varying float vAlpha;
+                    varying vec3 vColorOut;
+
+                    void main() {
+                        vec4 worldPos = modelMatrix * vec4(position, 1.0);
+                        // 法线：归一化的顶点位置（模型空间）
+                        vec3 normal = normalize((modelMatrix * vec4(normalize(position), 0.0)).xyz);
+                        vec3 viewDir = normalize(uCameraPos - worldPos.xyz);
+                        float dotProduct = dot(normal, viewDir);
+                        // 映射到0.25-1.0，使得背面仍然可见但较淡
+                        float factor = 0.25 + 0.75 * max(0.0, dotProduct);
+                        // 透明度：背面降低
+                        vAlpha = factor;
+                        // 颜色亮度：背面稍微变暗但保持基础亮度
+                        float brightness = 0.45 + 0.55 * max(0.0, dotProduct);
+                        vColorOut = vec3(0.36, 0.61, 0.96) * brightness;
+                        gl_Position = projectionMatrix * viewMatrix * worldPos;
+                    }
+                `,
+                fragmentShader: `
+                    varying float vAlpha;
+                    varying vec3 vColorOut;
+                    uniform float uOpacity;
+
+                    void main() {
+                        float finalAlpha = vAlpha * uOpacity;
+                        // 边缘微微发光效果
+                        gl_FragColor = vec4(vColorOut, finalAlpha * 0.92);
+                    }
+                `,
                 transparent: true,
-                opacity: opacity,
+                depthWrite: false,
+                blending: THREE.NormalBlending,
             });
 
-            const mesh = new THREE.LineSegments(geometry, material);
-
-            // 存储顶点位置引用 (本地坐标)
-            const posArray = geometry.attributes.position.array;
-            const colorArray = geometry.attributes.color.array;
-
-            // 更新颜色的函数
-            function updateColors(cameraPos, parentMatrix) {
-                // 临时向量
-                const tempPos = new THREE.Vector3();
-                const tempWorld = new THREE.Vector3();
-                const tempNormal = new THREE.Vector3();
-                const tempView = new THREE.Vector3();
-
-                // 如果传入了父级矩阵，使用它来计算世界位置，否则直接使用本地位置
-                // 对于地球，父级是solarSystem，有缩放
-                // 对于月球，父级是solarSystem + moonGroup，有缩放和旋转
-                // 这里我们使用mesh的matrixWorld，它已经包含了所有父级变换
-                // 但注意，如果父级变换在更新颜色时发生了变化，需要先更新矩阵
-                mesh.updateWorldMatrix(true, false);
-
-                const half = total;
-
-                for (let i = 0; i < half; i++) {
-                    const ix = i * 3;
-                    // 本地位置
-                    tempPos.set(posArray[ix], posArray[ix + 1], posArray[ix + 2]);
-                    // 世界位置 (使用mesh的matrixWorld)
-                    tempWorld.copy(tempPos).applyMatrix4(mesh.matrixWorld);
-
-                    // 法线方向 = 归一化世界位置 (球体中心在原点)
-                    tempNormal.copy(tempWorld).normalize();
-
-                    // 视线方向
-                    tempView.copy(cameraPos).sub(tempWorld).normalize();
-
-                    // 夹角余弦
-                    const dot = tempNormal.dot(tempView);
-
-                    // 亮度: 正面亮，背面暗
-                    // 平滑过渡: 从背面的0.20到正面的1.0
-                    const brightness = 0.20 + 0.80 * Math.pow(Math.max(0, dot), 0.6);
-
-                    // 应用亮度到颜色
-                    colorArray[ix] = baseColorObj.r * brightness;
-                    colorArray[ix + 1] = baseColorObj.g * brightness;
-                    colorArray[ix + 2] = baseColorObj.b * brightness;
-                }
-
-                geometry.attributes.color.needsUpdate = true;
-            }
-
-            return {
-                mesh: mesh,
-                geometry: geometry,
-                updateColors: updateColors,
-                baseColor: baseColorObj.clone(),
-                // 方便直接访问
-                get visible() { return mesh.visible; },
-                set visible(v) { mesh.visible = v; },
-                get position() { return mesh.position; },
-                get rotation() { return mesh.rotation; },
-                get scale() { return mesh.scale; },
-                // 转发常用方法
-                localToWorld: (v) => mesh.localToWorld(v),
-                getWorldPosition: (v) => mesh.getWorldPosition(v),
-            };
+            const lines = new THREE.LineSegments(geometry, material);
+            lines.userData.isPerspective = true;
+            lines.userData.radius = radius;
+            return lines;
         }
 
-        // ================================================================
-        //  3. 地月系统组
-        // ================================================================
+        function updatePerspectiveUniforms(obj, camPos) {
+            if (obj && obj.material && obj.material.uniforms) {
+                obj.material.uniforms.uCameraPos.value.copy(camPos);
+            }
+            if (obj.children) {
+                obj.children.forEach(child => {
+                    if (child.material && child.material.uniforms) {
+                        child.material.uniforms.uCameraPos.value.copy(camPos);
+                    }
+                });
+            }
+        }
+
         const solarSystem = new THREE.Group();
         scene.add(solarSystem);
 
         const LOADING_RADIUS = 2.2;
         const TARGET_EARTH_RADIUS = 0.8;
 
-        // --- 地球 (带透视) ---
-        const earthObj = createPerspectiveSphere(LOADING_RADIUS, 20, 28, 0x5b9cf5, 0.95);
-        const earth = earthObj.mesh;
+        const earth = createPerspectiveSphere(LOADING_RADIUS, 20, 28, 0x4a8cff, 0.95);
         solarSystem.add(earth);
 
-        // --- 星空 (粒子) ---
-        const starCount = 2000;
+        const starCount = 2200;
         const starGeo = new THREE.BufferGeometry();
         const starPos = new Float32Array(starCount * 3);
         const starSizes = new Float32Array(starCount);
@@ -901,7 +769,6 @@
         scene.add(stars);
         const baseStarSizes = new Float32Array(starSizes);
 
-        // --- 正方体 (地球内部) ---
         const CUBE_SIZE = TARGET_EARTH_RADIUS * 0.4 * 2;
         const cubeGeo = new THREE.BoxGeometry(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE);
         const cubeEdges = new THREE.EdgesGeometry(cubeGeo);
@@ -914,14 +781,12 @@
         cube.visible = false;
         solarSystem.add(cube);
 
-        // 正方体点击检测
         const clickCubeGeo = new THREE.BoxGeometry(CUBE_SIZE * 1.3, CUBE_SIZE * 1.3, CUBE_SIZE * 1.3);
         const clickCubeMat = new THREE.MeshBasicMaterial({ visible: false });
         const clickCube = new THREE.Mesh(clickCubeGeo, clickCubeMat);
         clickCube.userData.isCube = true;
         solarSystem.add(clickCube);
 
-        // --- 正方体粒子 ---
         const particleCount = 220;
         const particleGeo = new THREE.BufferGeometry();
         const particlePos = new Float32Array(particleCount * 3);
@@ -962,19 +827,17 @@
         particles.visible = false;
         solarSystem.add(particles);
 
-        // --- 月球 (带透视) ---
         const MOON_RADIUS = 0.3;
         const ORBIT_RADIUS = 2.5;
-        const moonObj = createPerspectiveSphere(MOON_RADIUS, 12, 18, 0x99ccff, 0.8);
-        const moon = moonObj.mesh;
+        const moon = createPerspectiveSphere(MOON_RADIUS, 12, 18, 0x88ccff, 0.82);
         moon.position.set(ORBIT_RADIUS, 0, 0);
         const moonGroup = new THREE.Group();
         moonGroup.add(moon);
         solarSystem.add(moonGroup);
         moon.visible = false;
         moonGroup.visible = false;
+        moon.material.uniforms.uOpacity.value = 0;
 
-        // --- 轨道环 ---
         const orbitRingGeo = new THREE.BufferGeometry();
         const ringPoints = [];
         const segments = 72;
@@ -983,14 +846,15 @@
             ringPoints.push(ORBIT_RADIUS * Math.cos(angle), 0, ORBIT_RADIUS * Math.sin(angle));
         }
         orbitRingGeo.setAttribute('position', new THREE.Float32BufferAttribute(ringPoints, 3));
-        const ringMat = new THREE.LineBasicMaterial({ color: 0x4488cc, transparent: true, opacity: 0.10 });
+        const ringMat = new THREE.LineBasicMaterial({
+            color: 0x4488cc,
+            transparent: true,
+            opacity: 0
+        }); 
         const orbitRing = new THREE.Line(orbitRingGeo, ringMat);
         solarSystem.add(orbitRing);
         orbitRing.visible = false;
 
-        // ================================================================
-        //  4. 加载文字 & 逻辑
-        // ================================================================
         const BINARY_STR =
             '01000100 01110101 01101100 01100011 01101001 01110110 01101001 01110100 01100001';
         const COLORS = { '0': '#5b9cf5', '1': '#7fc8ff' };
@@ -1023,70 +887,39 @@
         const lastDelayMs = lastCharIndex * 42 + 160;
         const animDuration = 500;
         const loadMinTime = lastDelayMs + animDuration + 200;
-
-        // ================================================================
-        //  5. 状态管理
-        // ================================================================
         let isMoving = true;
         const BASE_EARTH_ROTATION = 0.2;
         const BASE_MOON_ROTATION = 0.4;
         const BASE_ORBIT_SPEED = 0.5;
-
         let isTransitioning = false;
         let transitionProgress = 0;
-        const TRANSITION_DURATION = 2.2;
-
+        const TRANSITION_DURATION = 2.4;
         let targetScale = 1;
         let currentScale = 1;
         const MIN_SCALE = 0.35;
         const MAX_SCALE = 2.4;
-
-        // ================================================================
-        //  6. DOM 引用
-        // ================================================================
         const loadingScreen = document.getElementById('loading-screen');
         const mainContent = document.getElementById('main-content');
         const dynamicText = document.getElementById('dynamicText');
         const motionStatus = document.getElementById('motionStatus');
         const statusHint = document.getElementById('statusHint');
-        const musicOverlay = document.getElementById('music-overlay');
+        const toolsOverlay = document.getElementById('tools-overlay');
         const gameOverlay = document.getElementById('game-overlay');
-        const playBtn = document.getElementById('playBtn');
-        const songStatus = document.getElementById('songStatus');
-        const waveformCanvas = document.getElementById('waveform');
-        const ctx = waveformCanvas.getContext('2d');
-
-        // ================================================================
-        //  7. 更新文字 & 状态
-        // ================================================================
-        function updateText() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const age = year - 2010;
-            document.getElementById('mainWord').textContent =
-                `在过去的时光里，我一共存活了 ${age} 年`;
-            document.getElementById('subWord').textContent =
-                `超越全球 24% 的人！`;
-        }
-        updateText();
 
         function updateStatusDisplay() {
             if (isMoving) {
                 motionStatus.textContent = '● 运行中';
                 motionStatus.style.color = 'rgba(80, 220, 100, 0.6)';
                 statusHint.innerHTML =
-                    '● 运行中 &nbsp;·&nbsp; 点击 <span class="highlight">■</span> 正方体暂停';
+                    '反正你也看不到，我可要偷偷骂你啦';
             } else {
                 motionStatus.textContent = '● 已暂停';
                 motionStatus.style.color = 'rgba(255, 100, 80, 0.5)';
                 statusHint.innerHTML =
-                    '● 已暂停 &nbsp;·&nbsp; 点击 <span class="highlight">■</span> 正方体恢复';
+                    '笨蛋！算你聪明！';
             }
         }
 
-        // ================================================================
-        //  8. 文字淡入淡出 (视角变化)
-        // ================================================================
         let textFadeTimer = null;
 
         function fadeTextOut() {
@@ -1105,10 +938,6 @@
         }
         controls.addEventListener('start', fadeTextOut);
         controls.addEventListener('end', fadeTextIn);
-
-        // ================================================================
-        //  9. 加载完成
-        // ================================================================
         function finishLoading() {
             loadingScreen.classList.add('hidden');
             mainContent.classList.add('visible');
@@ -1121,9 +950,6 @@
         }
         setTimeout(finishLoading, loadMinTime);
 
-        // ================================================================
-        //  10. 点击交互 (正方体暂停/恢复)
-        // ================================================================
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
@@ -1147,9 +973,6 @@
             }
         });
 
-        // ================================================================
-        //  11. 导航切换
-        // ================================================================
         const navItems = document.querySelectorAll('.nav-item');
         const navHome = document.getElementById('navHome');
 
@@ -1157,7 +980,7 @@
             navItems.forEach(el => el.classList.remove('active'));
             document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
 
-            musicOverlay.classList.remove('active');
+            toolsOverlay.classList.remove('active');
             gameOverlay.classList.remove('active');
             mainContent.style.opacity = '0';
             mainContent.style.pointerEvents = 'none';
@@ -1166,27 +989,12 @@
                 mainContent.style.opacity = '1';
                 mainContent.style.pointerEvents = 'none';
                 document.getElementById('canvas-container').style.opacity = '1';
-                if (waveformAnimId) {
-                    cancelAnimationFrame(waveformAnimId);
-                    waveformAnimId = null;
-                }
-                ctx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
-                document.getElementById('canvas-container').style.opacity = '1';
-            } else if (page === 'music') {
-                musicOverlay.classList.add('active');
+            } else if (page === 'tools') {
+                toolsOverlay.classList.add('active');
                 document.getElementById('canvas-container').style.opacity = '0.3';
-                if (!waveformAnimId && audioContext && audioContext.state === 'running') {
-                    drawWaveform();
-                } else if (!audioContext) {
-                    initAudio();
-                }
             } else if (page === 'game') {
                 gameOverlay.classList.add('active');
                 document.getElementById('canvas-container').style.opacity = '0.3';
-                if (waveformAnimId) {
-                    cancelAnimationFrame(waveformAnimId);
-                    waveformAnimId = null;
-                }
             }
         }
 
@@ -1208,9 +1016,6 @@
             updateStars(1);
         });
 
-        // ================================================================
-        //  12. 滚轮缩放 & 窗口自适应
-        // ================================================================
         renderer.domElement.addEventListener('wheel', (e) => {
             e.preventDefault();
             const delta = e.deltaY > 0 ? -0.07 : 0.07;
@@ -1231,19 +1036,10 @@
                 camera.position.set(0, 1.8, 6.0);
             }
             controls.update();
-            const containerEl = document.getElementById('waveform-container');
-            const rect = containerEl.getBoundingClientRect();
-            waveformCanvas.width = rect.width * devicePixelRatio;
-            waveformCanvas.height = rect.height * devicePixelRatio;
-            waveformCanvas.style.width = rect.width + 'px';
-            waveformCanvas.style.height = rect.height + 'px';
         }
         window.addEventListener('resize', onResize);
         setTimeout(onResize, 200);
 
-        // ================================================================
-        //  13. 星空更新
-        // ================================================================
         function updateStars(scaleFactor) {
             const posAttr = stars.geometry.attributes.position;
             const array = posAttr.array;
@@ -1271,199 +1067,18 @@
             starMat.opacity = 0.30 + 0.25 * (scaleFactor - 0.3);
         }
 
-        // ================================================================
-        //  14. 音频 & 波形 (路径改为 music/crystalchime.mp3)
-        // ================================================================
-        let audioContext = null;
-        let audioElement = null;
-        let sourceNode = null;
-        let analyser = null;
-        let waveformAnimId = null;
-        let isAudioReady = false;
 
-        function initAudio() {
-            try {
-                audioContext = new(window.AudioContext || window.webkitAudioContext)();
-                // 音频路径: music/crystalchime.mp3 (GitHub仓库)
-                audioElement = new Audio('music/crystalchime.mp3');
-                audioElement.crossOrigin = 'anonymous';
-                audioElement.preload = 'auto';
-
-                audioElement.addEventListener('canplaythrough', () => {
-                    if (audioContext && audioContext.state === 'suspended') {
-                        audioContext.resume();
-                    }
-                    setupAudioNodes();
-                });
-
-                audioElement.addEventListener('error', (e) => {
-                    console.warn('音频加载失败:', e);
-                    songStatus.textContent = '❌ 文件加载失败 (music/crystalchime.mp3)';
-                    // 尝试使用在线示例
-                    // 取消注释下一行可启用备用音频
-                    // audioElement.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-                    // audioElement.load();
-                });
-
-                audioElement.load();
-            } catch (e) {
-                console.warn('Web Audio API 不支持', e);
-                songStatus.textContent = '⚠️ 音频不支持';
+        function updateAllPerspectiveUniforms(camPos) {
+            // 地球
+            if (earth && earth.material && earth.material.uniforms) {
+                earth.material.uniforms.uCameraPos.value.copy(camPos);
+            }
+            if (moon && moon.material && moon.material.uniforms) {
+                moon.material.uniforms.uCameraPos.value.copy(camPos);
             }
         }
 
-        function setupAudioNodes() {
-            if (!audioContext || !audioElement) return;
-            try {
-                sourceNode = audioContext.createMediaElementSource(audioElement);
-                analyser = audioContext.createAnalyser();
-                analyser.fftSize = 2048;
-                analyser.smoothingTimeConstant = 0.8;
-                sourceNode.connect(analyser);
-                analyser.connect(audioContext.destination);
-                isAudioReady = true;
-                songStatus.textContent = '✅ 就绪';
-                if (musicOverlay.classList.contains('active')) {
-                    drawWaveform();
-                }
-            } catch (e) {
-                console.warn('音频节点设置失败', e);
-                songStatus.textContent = '⚠️ 节点错误';
-            }
-        }
 
-        playBtn.addEventListener('click', () => {
-            if (!audioContext) {
-                initAudio();
-                return;
-            }
-            if (audioContext.state === 'suspended') {
-                audioContext.resume();
-            }
-            if (!isAudioReady) {
-                songStatus.textContent = '⏳ 加载中...';
-                return;
-            }
-            if (audioElement.paused) {
-                audioElement.play().then(() => {
-                    playBtn.textContent = '⏸';
-                    playBtn.classList.add('playing');
-                    songStatus.textContent = '▶ 播放中';
-                    if (musicOverlay.classList.contains('active')) {
-                        drawWaveform();
-                    }
-                }).catch(e => {
-                    console.warn('播放失败', e);
-                    songStatus.textContent = '⚠️ 播放失败';
-                });
-            } else {
-                audioElement.pause();
-                playBtn.textContent = '▶';
-                playBtn.classList.remove('playing');
-                songStatus.textContent = '⏸ 已暂停';
-                if (waveformAnimId) {
-                    cancelAnimationFrame(waveformAnimId);
-                    waveformAnimId = null;
-                }
-            }
-        });
-
-        function drawWaveform() {
-            if (!analyser || !audioElement || audioElement.paused) {
-                if (audioElement && audioElement.paused) {
-                    const w = waveformCanvas.width;
-                    const h = waveformCanvas.height;
-                    ctx.clearRect(0, 0, w, h);
-                    ctx.strokeStyle = 'rgba(80, 180, 255, 0.15)';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(0, h / 2);
-                    ctx.lineTo(w, h / 2);
-                    ctx.stroke();
-                }
-                waveformAnimId = requestAnimationFrame(drawWaveform);
-                return;
-            }
-
-            const dataArray = new Uint8Array(analyser.fftSize);
-            analyser.getByteTimeDomainData(dataArray);
-
-            const w = waveformCanvas.width;
-            const h = waveformCanvas.height;
-
-            ctx.clearRect(0, 0, w, h);
-
-            const grad = ctx.createLinearGradient(0, 0, 0, h);
-            grad.addColorStop(0, 'rgba(10, 30, 60, 0.0)');
-            grad.addColorStop(0.5, 'rgba(30, 100, 200, 0.03)');
-            grad.addColorStop(1, 'rgba(10, 30, 60, 0.0)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, w, h);
-
-            const step = Math.max(1, Math.floor(dataArray.length / w));
-            const halfH = h / 2;
-
-            ctx.shadowColor = 'rgba(80, 180, 255, 0.3)';
-            ctx.shadowBlur = 12;
-            ctx.strokeStyle = 'rgba(100, 200, 255, 0.6)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            for (let i = 0; i < w; i++) {
-                const idx = Math.min(Math.floor(i * step), dataArray.length - 1);
-                const val = (dataArray[idx] - 128) / 128;
-                const y = halfH + val * halfH * 0.9;
-                if (i === 0) ctx.moveTo(i, y);
-                else ctx.lineTo(i, y);
-            }
-            ctx.stroke();
-
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = 'rgba(180, 220, 255, 0.15)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            for (let i = 0; i < w; i++) {
-                const idx = Math.min(Math.floor(i * step), dataArray.length - 1);
-                const val = (dataArray[idx] - 128) / 128;
-                const y = halfH + val * halfH * 0.85;
-                if (i === 0) ctx.moveTo(i, y);
-                else ctx.lineTo(i, y);
-            }
-            ctx.stroke();
-
-            ctx.strokeStyle = 'rgba(80, 180, 255, 0.04)';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([4, 8]);
-            ctx.beginPath();
-            ctx.moveTo(0, halfH);
-            ctx.lineTo(w, halfH);
-            ctx.stroke();
-            ctx.setLineDash([]);
-
-            let maxVal = 0;
-            let maxIdx = 0;
-            for (let i = 0; i < dataArray.length; i++) {
-                const v = Math.abs(dataArray[i] - 128);
-                if (v > maxVal) { maxVal = v;
-                    maxIdx = i; }
-            }
-            if (maxVal > 10) {
-                const peakX = (maxIdx / dataArray.length) * w;
-                const peakY = halfH + ((dataArray[maxIdx] - 128) / 128) * halfH * 0.9;
-                ctx.shadowColor = 'rgba(247, 201, 72, 0.5)';
-                ctx.shadowBlur = 20;
-                ctx.fillStyle = 'rgba(247, 201, 72, 0.3)';
-                ctx.beginPath();
-                ctx.arc(peakX, peakY, 4, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.shadowBlur = 0;
-            }
-
-            waveformAnimId = requestAnimationFrame(drawWaveform);
-        }
-
-        // ================================================================
-        //  15. 动画循环 (包含透视颜色更新)
-        // ================================================================
         const clock = new THREE.Clock();
 
         function easeInOutCubic(t) {
@@ -1476,11 +1091,9 @@
             const delta = Math.min(clock.getDelta(), 0.05);
             const elapsed = clock.getElapsedTime();
             particleTime += delta;
-
-            // 加载球体自转
+			
+            updateAllPerspectiveUniforms(camera.position);
             earth.rotation.y -= delta * 0.4;
-
-            // 过渡
             if (isTransitioning) {
                 transitionProgress += delta / TRANSITION_DURATION;
                 if (transitionProgress >= 1) {
@@ -1497,6 +1110,8 @@
                     moon.position.set(ORBIT_RADIUS, 0, 0);
                     cube.position.set(0, 0, 0);
                     clickCube.position.set(0, 0, 0);
+                    moon.material.uniforms.uOpacity.value = 0.82;
+                    orbitRing.material.opacity = 0.10;
                     updateStatusDisplay();
                 }
                 const t = easeInOutCubic(transitionProgress);
@@ -1506,9 +1121,18 @@
                 cube.scale.set(cs, cs, cs);
                 clickCube.scale.set(cs, cs, cs);
                 particles.scale.set(s, s, s);
+
+                const moonOpacity = t * 0.82;
+                moon.material.uniforms.uOpacity.value = moonOpacity;
+                orbitRing.material.opacity = t * 0.10;
+
+                const startPos = new THREE.Vector3(0, 0, 0);
+                const endPos = new THREE.Vector3(ORBIT_RADIUS, 0, 0);
+                const currentPos = startPos.clone().lerp(endPos, t);
+                moon.position.copy(currentPos);
+                moon.rotation.y -= delta * BASE_MOON_ROTATION * t;
             }
 
-            // 主运动
             if (!isTransitioning && moon.visible) {
                 if (isMoving) {
                     earth.rotation.y -= delta * BASE_EARTH_ROTATION;
@@ -1520,12 +1144,10 @@
                     moon.rotation.y -= delta * BASE_MOON_ROTATION;
                 }
 
-                // 正方体独立旋转 (与地球反向)
                 cube.rotation.y += delta * 0.7;
                 cube.rotation.x += delta * 0.05;
                 cube.rotation.z += delta * 0.03;
 
-                // 粒子围绕正方体旋转
                 const posAttr = particles.geometry.attributes.position;
                 const array = posAttr.array;
                 const baseR = PARTICLE_RADIUS;
@@ -1555,17 +1177,12 @@
 
                 clickCube.position.copy(cube.position);
 
-                // ---- 更新地球和月球的透视颜色 ----
-                // 地球: 使用earthObj.updateColors，传入相机位置
-                earthObj.updateColors(camera.position);
-                // 月球: 使用moonObj.updateColors
-                moonObj.updateColors(camera.position);
-
-                // 缩放
                 currentScale += (targetScale - currentScale) * 0.08;
                 solarSystem.scale.set(currentScale, currentScale, currentScale);
                 updateStars(currentScale);
-                orbitRing.material.opacity = 0.06 + 0.12 * (currentScale - 0.35) / 2.0;
+                if (!isTransitioning) {
+                    orbitRing.material.opacity = 0.06 + 0.06 * (currentScale - 0.35) / 2.0;
+                }
             }
 
             stars.rotation.y += delta * 0.006;
@@ -1575,49 +1192,11 @@
         }
 
         animate();
-
-        // ================================================================
-        //  16. 初始化
-        // ================================================================
+	//重头来一遍
         setTimeout(() => {
             updateStars(1);
             updateStatusDisplay();
-            const containerEl = document.getElementById('waveform-container');
-            const rect = containerEl.getBoundingClientRect();
-            waveformCanvas.width = rect.width * devicePixelRatio;
-            waveformCanvas.height = rect.height * devicePixelRatio;
-            waveformCanvas.style.width = rect.width + 'px';
-            waveformCanvas.style.height = rect.height + 'px';
-            const w = waveformCanvas.width;
-            const h = waveformCanvas.height;
-            ctx.clearRect(0, 0, w, h);
-            ctx.strokeStyle = 'rgba(80, 180, 255, 0.08)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(0, h / 2);
-            ctx.lineTo(w, h / 2);
-            ctx.stroke();
         }, 200);
-
-        window.addEventListener('resize', () => {
-            const containerEl = document.getElementById('waveform-container');
-            const rect = containerEl.getBoundingClientRect();
-            waveformCanvas.width = rect.width * devicePixelRatio;
-            waveformCanvas.height = rect.height * devicePixelRatio;
-            waveformCanvas.style.width = rect.width + 'px';
-            waveformCanvas.style.height = rect.height + 'px';
-        });
-
-        // ================================================================
-        //  17. 控制台
-        // ================================================================
-        console.log('✦ Dulcivita · 地月系统 + 音乐播放器');
-        console.log(`  编码: ${BINARY_STR}`);
-        console.log('  含义: Dulcivita');
-        console.log('  🌍 地球自西向东自转 · 透视效果 (背面变淡)');
-        console.log('  ■ 正方体反方向旋转 + 粒子环绕');
-        console.log('  🎵 点击 Music 进入音乐播放器 (music/crystalchime.mp3)');
-        console.log('  🖱 滚轮缩放 · 拖拽旋转');
     </script>
 
 </body>
