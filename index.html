@@ -732,11 +732,12 @@
         scene.add(fillLight);
 
         // ================================================================
-        //  2. 工具：经纬线球体
+        //  2. 工具：带透视效果的经纬线球体
         // ================================================================
-        function createLatLongSphere(radius, latSteps = 18, lonSteps = 24, color = 0x5b9cf5, opacity = 0.9) {
+        function createPerspectiveSphere(radius, latSteps = 18, lonSteps = 24, baseColor = 0x5b9cf5, opacity = 0.9) {
             const positions = [];
             const indices = [];
+            // 生成顶点
             for (let i = 0; i <= latSteps; i++) {
                 const lat = -Math.PI / 2 + (i / latSteps) * Math.PI;
                 const sinLat = Math.sin(lat);
@@ -751,6 +752,7 @@
             }
             const cols = lonSteps + 1;
             const rows = latSteps + 1;
+            // 纬线
             for (let i = 0; i < rows; i++) {
                 for (let j = 0; j < lonSteps; j++) {
                     const idx1 = i * cols + j;
@@ -758,6 +760,7 @@
                     indices.push(idx1, idx2);
                 }
             }
+            // 经线
             for (let i = 0; i < latSteps; i++) {
                 for (let j = 0; j < cols; j++) {
                     const idx1 = i * cols + j;
@@ -765,27 +768,95 @@
                     indices.push(idx1, idx2);
                 }
             }
+
             const geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
             geometry.setIndex(indices);
+
             const total = positions.length / 3;
+            const baseColorObj = new THREE.Color(baseColor);
+            // 初始颜色 (全亮)
             const colors = new Float32Array(total * 3);
-            const c = new THREE.Color(color);
             for (let i = 0; i < total; i++) {
-                const y = positions[i * 3 + 1] / radius;
-                const t = (y + 1) / 2;
-                const col = c.clone().lerp(new THREE.Color(0x7fc8ff), t * 0.6);
-                colors[i * 3] = col.r;
-                colors[i * 3 + 1] = col.g;
-                colors[i * 3 + 2] = col.b;
+                colors[i * 3] = baseColorObj.r;
+                colors[i * 3 + 1] = baseColorObj.g;
+                colors[i * 3 + 2] = baseColorObj.b;
             }
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
             const material = new THREE.LineBasicMaterial({
                 vertexColors: true,
                 transparent: true,
                 opacity: opacity,
             });
-            return new THREE.LineSegments(geometry, material);
+
+            const mesh = new THREE.LineSegments(geometry, material);
+
+            // 存储顶点位置引用 (本地坐标)
+            const posArray = geometry.attributes.position.array;
+            const colorArray = geometry.attributes.color.array;
+
+            // 更新颜色的函数
+            function updateColors(cameraPos, parentMatrix) {
+                // 临时向量
+                const tempPos = new THREE.Vector3();
+                const tempWorld = new THREE.Vector3();
+                const tempNormal = new THREE.Vector3();
+                const tempView = new THREE.Vector3();
+
+                // 如果传入了父级矩阵，使用它来计算世界位置，否则直接使用本地位置
+                // 对于地球，父级是solarSystem，有缩放
+                // 对于月球，父级是solarSystem + moonGroup，有缩放和旋转
+                // 这里我们使用mesh的matrixWorld，它已经包含了所有父级变换
+                // 但注意，如果父级变换在更新颜色时发生了变化，需要先更新矩阵
+                mesh.updateWorldMatrix(true, false);
+
+                const half = total;
+
+                for (let i = 0; i < half; i++) {
+                    const ix = i * 3;
+                    // 本地位置
+                    tempPos.set(posArray[ix], posArray[ix + 1], posArray[ix + 2]);
+                    // 世界位置 (使用mesh的matrixWorld)
+                    tempWorld.copy(tempPos).applyMatrix4(mesh.matrixWorld);
+
+                    // 法线方向 = 归一化世界位置 (球体中心在原点)
+                    tempNormal.copy(tempWorld).normalize();
+
+                    // 视线方向
+                    tempView.copy(cameraPos).sub(tempWorld).normalize();
+
+                    // 夹角余弦
+                    const dot = tempNormal.dot(tempView);
+
+                    // 亮度: 正面亮，背面暗
+                    // 平滑过渡: 从背面的0.20到正面的1.0
+                    const brightness = 0.20 + 0.80 * Math.pow(Math.max(0, dot), 0.6);
+
+                    // 应用亮度到颜色
+                    colorArray[ix] = baseColorObj.r * brightness;
+                    colorArray[ix + 1] = baseColorObj.g * brightness;
+                    colorArray[ix + 2] = baseColorObj.b * brightness;
+                }
+
+                geometry.attributes.color.needsUpdate = true;
+            }
+
+            return {
+                mesh: mesh,
+                geometry: geometry,
+                updateColors: updateColors,
+                baseColor: baseColorObj.clone(),
+                // 方便直接访问
+                get visible() { return mesh.visible; },
+                set visible(v) { mesh.visible = v; },
+                get position() { return mesh.position; },
+                get rotation() { return mesh.rotation; },
+                get scale() { return mesh.scale; },
+                // 转发常用方法
+                localToWorld: (v) => mesh.localToWorld(v),
+                getWorldPosition: (v) => mesh.getWorldPosition(v),
+            };
         }
 
         // ================================================================
@@ -796,7 +867,10 @@
 
         const LOADING_RADIUS = 2.2;
         const TARGET_EARTH_RADIUS = 0.8;
-        const earth = createLatLongSphere(LOADING_RADIUS, 20, 28, 0x5b9cf5, 0.95);
+
+        // --- 地球 (带透视) ---
+        const earthObj = createPerspectiveSphere(LOADING_RADIUS, 20, 28, 0x5b9cf5, 0.95);
+        const earth = earthObj.mesh;
         solarSystem.add(earth);
 
         // --- 星空 (粒子) ---
@@ -888,10 +962,11 @@
         particles.visible = false;
         solarSystem.add(particles);
 
-        // --- 月球 ---
+        // --- 月球 (带透视) ---
         const MOON_RADIUS = 0.3;
         const ORBIT_RADIUS = 2.5;
-        const moon = createLatLongSphere(MOON_RADIUS, 12, 18, 0x99ccff, 0.8);
+        const moonObj = createPerspectiveSphere(MOON_RADIUS, 12, 18, 0x99ccff, 0.8);
+        const moon = moonObj.mesh;
         moon.position.set(ORBIT_RADIUS, 0, 0);
         const moonGroup = new THREE.Group();
         moonGroup.add(moon);
@@ -1082,45 +1157,27 @@
             navItems.forEach(el => el.classList.remove('active'));
             document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
 
-            // 隐藏所有覆盖层
             musicOverlay.classList.remove('active');
             gameOverlay.classList.remove('active');
             mainContent.style.opacity = '0';
             mainContent.style.pointerEvents = 'none';
 
-            // 显示对应页面
             if (page === 'home') {
                 mainContent.style.opacity = '1';
                 mainContent.style.pointerEvents = 'none';
-                // 恢复地月系统可见 (通过CSS)
                 document.getElementById('canvas-container').style.opacity = '1';
-                // 停止音频播放
-                if (audioContext && audioContext.state === 'running') {
-                    // 不强制停止，但用户切换后音乐继续播放？这里让音乐继续，但隐藏波形？
-                    // 实际上用户说切换后不显示地月系统，但音乐可以继续播放
-                    // 我们让音乐继续，但波形隐藏？或者让音乐停止？
-                    // 用户说"切换为music时，会切换到新的页面上，此时不会显示之前的地月系统"
-                    // 所以地月系统被覆盖，但音乐页面显示
-                    // 当回到home时，音乐页面隐藏，地月系统显示
-                    // 音乐可以继续播放，但波形隐藏
-                }
-                // 让波形停止绘制
                 if (waveformAnimId) {
                     cancelAnimationFrame(waveformAnimId);
                     waveformAnimId = null;
                 }
-                // 清除波形
                 ctx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
-                // 恢复地月系统显示
                 document.getElementById('canvas-container').style.opacity = '1';
             } else if (page === 'music') {
                 musicOverlay.classList.add('active');
                 document.getElementById('canvas-container').style.opacity = '0.3';
-                // 启动波形绘制
                 if (!waveformAnimId && audioContext && audioContext.state === 'running') {
                     drawWaveform();
                 } else if (!audioContext) {
-                    // 初始化音频
                     initAudio();
                 }
             } else if (page === 'game') {
@@ -1142,7 +1199,6 @@
 
         navHome.addEventListener('click', () => {
             setActivePage('home');
-            // 重置视角
             camera.position.set(0, 1.8, 6.0);
             controls.target.set(0, 0, 0);
             controls.update();
@@ -1175,7 +1231,6 @@
                 camera.position.set(0, 1.8, 6.0);
             }
             controls.update();
-            // 波形canvas尺寸
             const containerEl = document.getElementById('waveform-container');
             const rect = containerEl.getBoundingClientRect();
             waveformCanvas.width = rect.width * devicePixelRatio;
@@ -1217,7 +1272,7 @@
         }
 
         // ================================================================
-        //  14. 音频 & 波形
+        //  14. 音频 & 波形 (路径改为 music/crystalchime.mp3)
         // ================================================================
         let audioContext = null;
         let audioElement = null;
@@ -1229,7 +1284,8 @@
         function initAudio() {
             try {
                 audioContext = new(window.AudioContext || window.webkitAudioContext)();
-                audioElement = new Audio('crystalchime.mp3');
+                // 音频路径: music/crystalchime.mp3 (GitHub仓库)
+                audioElement = new Audio('music/crystalchime.mp3');
                 audioElement.crossOrigin = 'anonymous';
                 audioElement.preload = 'auto';
 
@@ -1240,9 +1296,13 @@
                     setupAudioNodes();
                 });
 
-                audioElement.addEventListener('error', () => {
-                    songStatus.textContent = '❌ 文件加载失败';
-                    console.warn('无法加载 crystalchime.mp3，请确认文件存在');
+                audioElement.addEventListener('error', (e) => {
+                    console.warn('音频加载失败:', e);
+                    songStatus.textContent = '❌ 文件加载失败 (music/crystalchime.mp3)';
+                    // 尝试使用在线示例
+                    // 取消注释下一行可启用备用音频
+                    // audioElement.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+                    // audioElement.load();
                 });
 
                 audioElement.load();
@@ -1263,7 +1323,6 @@
                 analyser.connect(audioContext.destination);
                 isAudioReady = true;
                 songStatus.textContent = '✅ 就绪';
-                // 如果音乐页面是激活的，开始绘制
                 if (musicOverlay.classList.contains('active')) {
                     drawWaveform();
                 }
@@ -1273,7 +1332,6 @@
             }
         }
 
-        // 播放/暂停
         playBtn.addEventListener('click', () => {
             if (!audioContext) {
                 initAudio();
@@ -1310,13 +1368,9 @@
             }
         });
 
-        // 波形绘制
         function drawWaveform() {
             if (!analyser || !audioElement || audioElement.paused) {
-                // 如果暂停，仍然绘制静音波形？
-                // 如果暂停且没有音频数据，可以绘制一条直线
                 if (audioElement && audioElement.paused) {
-                    // 绘制直线
                     const w = waveformCanvas.width;
                     const h = waveformCanvas.height;
                     ctx.clearRect(0, 0, w, h);
@@ -1339,7 +1393,6 @@
 
             ctx.clearRect(0, 0, w, h);
 
-            // 渐变背景
             const grad = ctx.createLinearGradient(0, 0, 0, h);
             grad.addColorStop(0, 'rgba(10, 30, 60, 0.0)');
             grad.addColorStop(0.5, 'rgba(30, 100, 200, 0.03)');
@@ -1350,7 +1403,6 @@
             const step = Math.max(1, Math.floor(dataArray.length / w));
             const halfH = h / 2;
 
-            // 绘制主波形 (发光)
             ctx.shadowColor = 'rgba(80, 180, 255, 0.3)';
             ctx.shadowBlur = 12;
             ctx.strokeStyle = 'rgba(100, 200, 255, 0.6)';
@@ -1365,7 +1417,6 @@
             }
             ctx.stroke();
 
-            // 内发光细线
             ctx.shadowBlur = 0;
             ctx.strokeStyle = 'rgba(180, 220, 255, 0.15)';
             ctx.lineWidth = 1;
@@ -1379,7 +1430,6 @@
             }
             ctx.stroke();
 
-            // 中心参考线
             ctx.strokeStyle = 'rgba(80, 180, 255, 0.04)';
             ctx.lineWidth = 1;
             ctx.setLineDash([4, 8]);
@@ -1389,7 +1439,6 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // 峰值指示点
             let maxVal = 0;
             let maxIdx = 0;
             for (let i = 0; i < dataArray.length; i++) {
@@ -1412,11 +1461,8 @@
             waveformAnimId = requestAnimationFrame(drawWaveform);
         }
 
-        // 初始时，如果音乐页面激活，尝试初始化
-        // 但加载完成后默认是home页面
-
         // ================================================================
-        //  15. 动画循环
+        //  15. 动画循环 (包含透视颜色更新)
         // ================================================================
         const clock = new THREE.Clock();
 
@@ -1459,7 +1505,6 @@
                 const cs = s;
                 cube.scale.set(cs, cs, cs);
                 clickCube.scale.set(cs, cs, cs);
-                // 粒子随着地球缩放
                 particles.scale.set(s, s, s);
             }
 
@@ -1498,7 +1543,6 @@
                 }
                 posAttr.needsUpdate = true;
 
-                // 粒子大小闪烁
                 const sizeAttr = particles.geometry.attributes.size;
                 if (sizeAttr) {
                     const sizes = sizeAttr.array;
@@ -1509,8 +1553,13 @@
                     sizeAttr.needsUpdate = true;
                 }
 
-                // 更新点击cube位置
                 clickCube.position.copy(cube.position);
+
+                // ---- 更新地球和月球的透视颜色 ----
+                // 地球: 使用earthObj.updateColors，传入相机位置
+                earthObj.updateColors(camera.position);
+                // 月球: 使用moonObj.updateColors
+                moonObj.updateColors(camera.position);
 
                 // 缩放
                 currentScale += (targetScale - currentScale) * 0.08;
@@ -1533,14 +1582,12 @@
         setTimeout(() => {
             updateStars(1);
             updateStatusDisplay();
-            // 波形canvas尺寸
             const containerEl = document.getElementById('waveform-container');
             const rect = containerEl.getBoundingClientRect();
             waveformCanvas.width = rect.width * devicePixelRatio;
             waveformCanvas.height = rect.height * devicePixelRatio;
             waveformCanvas.style.width = rect.width + 'px';
             waveformCanvas.style.height = rect.height + 'px';
-            // 绘制初始直线
             const w = waveformCanvas.width;
             const h = waveformCanvas.height;
             ctx.clearRect(0, 0, w, h);
@@ -1552,7 +1599,6 @@
             ctx.stroke();
         }, 200);
 
-        // 窗口resize时更新波形canvas
         window.addEventListener('resize', () => {
             const containerEl = document.getElementById('waveform-container');
             const rect = containerEl.getBoundingClientRect();
@@ -1568,9 +1614,9 @@
         console.log('✦ Dulcivita · 地月系统 + 音乐播放器');
         console.log(`  编码: ${BINARY_STR}`);
         console.log('  含义: Dulcivita');
-        console.log('  🌍 地球自西向东自转');
+        console.log('  🌍 地球自西向东自转 · 透视效果 (背面变淡)');
         console.log('  ■ 正方体反方向旋转 + 粒子环绕');
-        console.log('  🎵 点击 Music 进入音乐播放器');
+        console.log('  🎵 点击 Music 进入音乐播放器 (music/crystalchime.mp3)');
         console.log('  🖱 滚轮缩放 · 拖拽旋转');
     </script>
 
