@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dulcivita · 地月系统 & 音乐</title>
+    <style>
+        /* ----- 全局重置 ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            background: #070b14;
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: #b0d4ff;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* ----- Three.js 画布容器 ----- */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+        }
+
+        /* ----- 加载屏幕 ----- */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            transition: opacity 1.2s ease;
+            background: rgba(7, 11, 20, 0.7);
+            backdrop-filter: blur(4px);
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+        .binary-wrapper-load {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            padding: 8px 16px;
+            background: rgba(7, 11, 20, 0.45);
+            backdrop-filter: blur(2px);
+            border-radius: 8px;
+            box-shadow: 0 0 40px rgba(30, 144, 255, 0.04);
+            margin-bottom: 18px;
+        }
+        .binary-row-load {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            letter-spacing: 0.03em;
+            font-weight: 500;
+            font-size: clamp(10px, 2.2vw, 42px);
+            line-height: 1.3;
+            white-space: nowrap;
+            user-select: none;
+        }
+        .char-load {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(14px) scale(0.92);
+            animation: charAppear 0.50s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+        .char-load.space {
+            width: 0.40em;
+            transform: none;
+            animation: none;
+            opacity: 1;
+        }
+        @keyframes charAppear {
+            0% {
+                opacity: 0;
+                transform: translateY(14px) scale(0.92);
+                text-shadow: 0 0 0 rgba(30, 144, 255, 0);
+            }
+            60% {
+                opacity: 1;
+                transform: translateY(-2px) scale(1.02);
+                text-shadow: 0 0 28px rgba(30, 144, 255, 0.30);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                text-shadow: 0 0 14px rgba(30, 144, 255, 0.10);
+            }
+        }
+        .name-load {
+            font-size: clamp(13px, 1.5vw, 30px);
+            font-weight: 400;
+            letter-spacing: 0.30em;
+            color: #b0d4ff;
+            text-shadow: 0 0 24px rgba(30, 144, 255, 0.20), 0 0 64px rgba(30, 144, 255, 0.06);
+            border-top: 1px solid rgba(60, 160, 255, 0.12);
+            border-bottom: 1px solid rgba(60, 160, 255, 0.12);
+            padding: 5px 20px;
+            background: rgba(10, 20, 50, 0.20);
+            backdrop-filter: blur(2px);
+            border-radius: 4px;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: nameFadeIn 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+            animation-delay: 0.4s;
+        }
+        @keyframes nameFadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(10px) scale(0.97);
+                text-shadow: 0 0 0 rgba(30, 144, 255, 0);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                text-shadow: 0 0 24px rgba(30, 144, 255, 0.20), 0 0 64px rgba(30, 144, 255, 0.06);
+            }
+        }
+        .name-load {
+            animation: nameFadeIn 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards,
+                nameGlow 4.5s ease-in-out infinite 2.0s;
+        }
+        @keyframes nameGlow {
+            0%,
+            100% {
+                text-shadow: 0 0 20px rgba(30, 144, 255, 0.18), 0 0 60px rgba(30, 144, 255, 0.05);
+                border-color: rgba(60, 160, 255, 0.10);
+            }
+            50% {
+                text-shadow: 0 0 36px rgba(30, 144, 255, 0.32), 0 0 80px rgba(30, 144, 255, 0.10);
+                border-color: rgba(60, 160, 255, 0.22);
+            }
+        }
+
+        .blob-bg {
+            position: absolute;
+            width: 60vmin;
+            height: 60vmin;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(60, 160, 255, 0.15), rgba(30, 80, 180, 0.05));
+            filter: blur(40px);
+            z-index: 0;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: blobPulse 4s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        .blob-bg::after {
+            content: '';
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 70% 70%, rgba(100, 200, 255, 0.10), rgba(30, 80, 180, 0.02));
+            filter: blur(30px);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        @keyframes blobPulse {
+            0% {
+                transform: translate(-50%, -50%) scale(0.9);
+                opacity: 0.6;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        /* ----- 导航栏 (固定顶层) ----- */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 28px;
+            background: rgba(7, 11, 20, 0.55);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(60, 160, 255, 0.08);
+            pointer-events: auto;
+        }
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+        }
+        .nav-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid rgba(80, 180, 255, 0.4);
+            flex-shrink: 0;
+            background: #1a2a44;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #7fc8ff;
+            box-shadow: 0 0 20px rgba(30, 144, 255, 0.08);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .nav-icon:hover {
+            border-color: #7fc8ff;
+            box-shadow: 0 0 30px rgba(30, 144, 255, 0.18);
+        }
+        .nav-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .nav-title {
+            font-size: 17px;
+            letter-spacing: 0.15em;
+            color: #b0d4ff;
+            text-shadow: 0 0 20px rgba(30, 144, 255, 0.08);
+            font-weight: 300;
+        }
+        .nav-right {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+        .nav-item {
+            font-size: 14px;
+            letter-spacing: 0.12em;
+            color: rgba(176, 212, 255, 0.5);
+            cursor: pointer;
+            transition: color 0.3s, text-shadow 0.3s;
+            padding: 4px 2px;
+            border-bottom: 1px solid transparent;
+            user-select: none;
+        }
+        .nav-item:hover {
+            color: #b0d4ff;
+            text-shadow: 0 0 20px rgba(30, 144, 255, 0.15);
+        }
+        .nav-item.active {
+            color: #b0d4ff;
+            border-bottom-color: rgba(80, 180, 255, 0.3);
+        }
+
+        /* ----- 主界面内容 (覆盖层) ----- */
+        #main-content {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 5;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1.2s ease;
+        }
+        #main-content.visible {
+            opacity: 1;
+            pointer-events: none;
+        }
+
+        .side-text {
+            position: fixed;
+            right: 5%;
+            top: 50%;
+            transform: translateY(-50%);
+            text-align: left;
+            pointer-events: none;
+            color: #b0d4ff;
+            text-shadow: 0 0 30px rgba(30, 144, 255, 0.08);
+            z-index: 2;
+            max-width: 50%;
+            transition: opacity 0.6s ease;
+            opacity: 1;
+        }
+        .side-text.fading {
+            opacity: 0.08;
+        }
+        .side-text .main-word {
+            font-size: clamp(18px, 3vw, 44px);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: #d0e8ff;
+            text-shadow: 0 0 40px rgba(30, 144, 255, 0.15);
+            line-height: 1.3;
+        }
+        .side-text .sub-word {
+            font-size: clamp(11px, 1.2vw, 18px);
+            letter-spacing: 0.08em;
+            color: rgba(160, 200, 255, 0.50);
+            margin-top: 8px;
+            font-weight: 300;
+            border-top: 1px solid rgba(60, 160, 255, 0.10);
+            padding-top: 10px;
+        }
+
+        .status-hint {
+            position: fixed;
+            bottom: 24px;
+            left: 28px;
+            z-index: 3;
+            font-size: 11px;
+            color: rgba(80, 160, 255, 0.25);
+            letter-spacing: 0.12em;
+            font-family: 'Consolas', monospace;
+            pointer-events: none;
+            user-select: none;
+            transition: opacity 0.6s;
+        }
+        .status-hint .highlight {
+            color: rgba(247, 201, 72, 0.5);
+        }
+        .footer-deco-main {
+            position: fixed;
+            bottom: 20px;
+            right: 28px;
+            z-index: 3;
+            font-size: 10px;
+            color: rgba(80, 160, 255, 0.08);
+            letter-spacing: 0.18em;
+            font-family: 'Consolas', monospace;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* ----- 音乐页面覆盖层 ----- */
+        #music-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 8;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(7, 11, 20, 0.92);
+            backdrop-filter: blur(8px);
+            padding-top: 70px;
+        }
+        #music-overlay.active {
+            display: flex;
+        }
+
+        #waveform-container {
+            width: 92vw;
+            max-width: 1400px;
+            height: 55vh;
+            min-height: 200px;
+            background: rgba(10, 20, 40, 0.4);
+            border-radius: 16px;
+            border: 1px solid rgba(60, 160, 255, 0.06);
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 60px rgba(30, 144, 255, 0.04);
+        }
+        #waveform-container canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .music-controls {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-top: 28px;
+            padding: 12px 32px;
+            background: rgba(10, 20, 40, 0.3);
+            border-radius: 40px;
+            border: 1px solid rgba(60, 160, 255, 0.08);
+            backdrop-filter: blur(2px);
+        }
+        #playBtn {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 2px solid rgba(80, 180, 255, 0.3);
+            background: rgba(30, 144, 255, 0.08);
+            color: #b0d4ff;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Consolas', monospace;
+            flex-shrink: 0;
+        }
+        #playBtn:hover {
+            background: rgba(30, 144, 255, 0.18);
+            border-color: rgba(80, 180, 255, 0.6);
+            box-shadow: 0 0 30px rgba(30, 144, 255, 0.10);
+        }
+        #playBtn.playing {
+            border-color: rgba(247, 201, 72, 0.4);
+        }
+        .song-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .song-name {
+            font-size: 16px;
+            color: #b0d4ff;
+            letter-spacing: 0.08em;
+        }
+        .song-status {
+            font-size: 11px;
+            color: rgba(160, 200, 255, 0.3);
+            letter-spacing: 0.06em;
+            margin-top: 2px;
+        }
+
+        /* ----- Game 页面覆盖层 ----- */
+        #game-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 8;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(7, 11, 20, 0.92);
+            backdrop-filter: blur(8px);
+            padding-top: 70px;
+        }
+        #game-overlay.active {
+            display: flex;
+        }
+        .game-content {
+            text-align: center;
+            color: rgba(176, 212, 255, 0.3);
+            letter-spacing: 0.2em;
+        }
+        .game-content h2 {
+            font-size: 32px;
+            font-weight: 300;
+            margin-bottom: 12px;
+            color: rgba(176, 212, 255, 0.4);
+        }
+        .game-content p {
+            font-size: 14px;
+            color: rgba(176, 212, 255, 0.2);
+        }
+
+        /* ----- 响应式 ----- */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 10px 16px;
+            }
+            .nav-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+            .nav-title {
+                font-size: 14px;
+                margin-left: 0;
+            }
+            .nav-right {
+                gap: 14px;
+            }
+            .nav-item {
+                font-size: 12px;
+            }
+            .side-text {
+                right: 3%;
+                max-width: 60%;
+            }
+            .side-text .main-word {
+                font-size: clamp(14px, 2.8vw, 28px);
+            }
+            .side-text .sub-word {
+                font-size: clamp(8px, 1vw, 13px);
+            }
+            #waveform-container {
+                height: 40vh;
+                width: 96vw;
+            }
+            .music-controls {
+                gap: 14px;
+                padding: 10px 20px;
+            }
+            #playBtn {
+                width: 44px;
+                height: 44px;
+                font-size: 18px;
+            }
+            .song-name {
+                font-size: 13px;
+            }
+            .status-hint {
+                display: none;
+            }
+            .binary-row-load {
+                font-size: clamp(7px, 1.8vw, 16px);
+            }
+            .binary-wrapper-load {
+                padding: 4px 10px;
+            }
+            .name-load {
+                font-size: clamp(9px, 1.4vw, 16px);
+                padding: 3px 12px;
+            }
+        }
+        @media (max-width: 480px) {
+            .navbar {
+                padding: 6px 10px;
+            }
+            .nav-icon {
+                width: 26px;
+                height: 26px;
+                font-size: 12px;
+                border-width: 1.5px;
+            }
+            .nav-title {
+                font-size: 11px;
+            }
+            .nav-item {
+                font-size: 10px;
+                gap: 10px;
+            }
+            .side-text {
+                right: 2%;
+                max-width: 70%;
+            }
+            .side-text .main-word {
+                font-size: clamp(11px, 2.5vw, 20px);
+            }
+            .side-text .sub-word {
+                font-size: clamp(6px, 0.9vw, 10px);
+                padding-top: 4px;
+                margin-top: 4px;
+            }
+            #waveform-container {
+                height: 30vh;
+                width: 98vw;
+                border-radius: 8px;
+            }
+            .music-controls {
+                gap: 10px;
+                padding: 8px 14px;
+                border-radius: 28px;
+            }
+            #playBtn {
+                width: 38px;
+                height: 38px;
+                font-size: 15px;
+            }
+            .song-name {
+                font-size: 11px;
+            }
+            .song-status {
+                font-size: 9px;
+            }
+            .binary-row-load {
+                font-size: clamp(4px, 1.3vw, 10px);
+            }
+            .binary-wrapper-load {
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+            .name-load {
+                font-size: clamp(7px, 1.2vw, 12px);
+                padding: 2px 8px;
+                border-width: 1px;
+            }
+            .blob-bg {
+                width: 80vmin;
+                height: 80vmin;
+                filter: blur(60px);
+            }
+            .footer-deco-main {
+                display: none;
+            }
+            .game-content h2 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ====== Three.js 容器 ====== -->
+    <div id="canvas-container"></div>
+
+    <!-- ====== 加载屏幕 ====== -->
+    <div id="loading-screen">
+        <div class="blob-bg"></div>
+        <div class="loading-content">
+            <div class="binary-wrapper-load">
+                <div class="binary-row-load" id="binaryRowLoad"></div>
+            </div>
+            <div class="name-load">- Dulcivita -</div>
+        </div>
+    </div>
+
+    <!-- ====== 导航栏 (固定顶层) ====== -->
+    <nav class="navbar">
+        <div class="nav-left" id="navHome">
+            <div class="nav-icon"><span style="font-size:16px; opacity:0.6;">✦</span></div>
+            <span class="nav-title">Dulcivita</span>
+        </div>
+        <div class="nav-right">
+            <span class="nav-item active" data-page="home">Home</span>
+            <span class="nav-item" data-page="music">Music</span>
+            <span class="nav-item" data-page="game">Game</span>
+        </div>
+    </nav>
+
+    <!-- ====== 主界面内容 ====== -->
+    <div id="main-content">
+        <div class="side-text" id="dynamicText">
+            <div class="main-word" id="mainWord">加载中...</div>
+            <div class="sub-word" id="subWord">超越全球 24% 的人！</div>
+        </div>
+        <div class="status-hint" id="statusHint">
+            <span id="motionStatus">● 运行中</span> &nbsp;·&nbsp; 点击 <span class="highlight">■</span> 正方体暂停
+        </div>
+        <div class="footer-deco-main">✦ 3D · 地月系统</div>
+    </div>
+
+    <!-- ====== 音乐页面 ====== -->
+    <div id="music-overlay">
+        <div id="waveform-container">
+            <canvas id="waveform"></canvas>
+        </div>
+        <div class="music-controls">
+            <button id="playBtn">▶</button>
+            <div class="song-info">
+                <span class="song-name">crystalchime.mp3</span>
+                <span class="song-status" id="songStatus">就绪</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== Game 页面 ====== -->
+    <div id="game-overlay">
+        <div class="game-content">
+            <h2>🎮 Game</h2>
+            <p>开发中 · 敬请期待</p>
+        </div>
+    </div>
+
+    <!-- ====== Three.js ====== -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        // ================================================================
+        //  1. 导入 & 场景
+        // ================================================================
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x070b14);
+
+        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 50);
+        camera.position.set(0, 1.8, 6.0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.target.set(0, 0, 0);
+        controls.enableZoom = true;
+        controls.zoomSpeed = 0.8;
+        controls.enablePan = false;
+        controls.minDistance = 2.5;
+        controls.maxDistance = 15;
+        controls.update();
+
+        // --- 光源 ---
+        const ambient = new THREE.AmbientLight(0x404060, 0.6);
+        scene.add(ambient);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(2, 3, 4);
+        scene.add(dirLight);
+        const fillLight = new THREE.DirectionalLight(0x4488ff, 0.3);
+        fillLight.position.set(-2, 1, -3);
+        scene.add(fillLight);
+
+        // ================================================================
+        //  2. 工具：经纬线球体
+        // ================================================================
+        function createLatLongSphere(radius, latSteps = 18, lonSteps = 24, color = 0x5b9cf5, opacity = 0.9) {
+            const positions = [];
+            const indices = [];
+            for (let i = 0; i <= latSteps; i++) {
+                const lat = -Math.PI / 2 + (i / latSteps) * Math.PI;
+                const sinLat = Math.sin(lat);
+                const cosLat = Math.cos(lat);
+                for (let j = 0; j <= lonSteps; j++) {
+                    const lon = (j / lonSteps) * 2 * Math.PI;
+                    const x = radius * cosLat * Math.cos(lon);
+                    const y = radius * sinLat;
+                    const z = radius * cosLat * Math.sin(lon);
+                    positions.push(x, y, z);
+                }
+            }
+            const cols = lonSteps + 1;
+            const rows = latSteps + 1;
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < lonSteps; j++) {
+                    const idx1 = i * cols + j;
+                    const idx2 = i * cols + j + 1;
+                    indices.push(idx1, idx2);
+                }
+            }
+            for (let i = 0; i < latSteps; i++) {
+                for (let j = 0; j < cols; j++) {
+                    const idx1 = i * cols + j;
+                    const idx2 = (i + 1) * cols + j;
+                    indices.push(idx1, idx2);
+                }
+            }
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setIndex(indices);
+            const total = positions.length / 3;
+            const colors = new Float32Array(total * 3);
+            const c = new THREE.Color(color);
+            for (let i = 0; i < total; i++) {
+                const y = positions[i * 3 + 1] / radius;
+                const t = (y + 1) / 2;
+                const col = c.clone().lerp(new THREE.Color(0x7fc8ff), t * 0.6);
+                colors[i * 3] = col.r;
+                colors[i * 3 + 1] = col.g;
+                colors[i * 3 + 2] = col.b;
+            }
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            const material = new THREE.LineBasicMaterial({
+                vertexColors: true,
+                transparent: true,
+                opacity: opacity,
+            });
+            return new THREE.LineSegments(geometry, material);
+        }
+
+        // ================================================================
+        //  3. 地月系统组
+        // ================================================================
+        const solarSystem = new THREE.Group();
+        scene.add(solarSystem);
+
+        const LOADING_RADIUS = 2.2;
+        const TARGET_EARTH_RADIUS = 0.8;
+        const earth = createLatLongSphere(LOADING_RADIUS, 20, 28, 0x5b9cf5, 0.95);
+        solarSystem.add(earth);
+
+        // --- 星空 (粒子) ---
+        const starCount = 2000;
+        const starGeo = new THREE.BufferGeometry();
+        const starPos = new Float32Array(starCount * 3);
+        const starSizes = new Float32Array(starCount);
+        for (let i = 0; i < starCount; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            const r = 6 + Math.random() * 24;
+            starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+            starPos[i * 3 + 1] = r * Math.cos(phi) * 0.5;
+            starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+            starSizes[i] = 0.012 + Math.random() * 0.08;
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        starGeo.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
+        const starMat = new THREE.PointsMaterial({
+            color: 0x88bbff,
+            size: 0.08,
+            transparent: true,
+            opacity: 0.45,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true,
+        });
+        const stars = new THREE.Points(starGeo, starMat);
+        scene.add(stars);
+        const baseStarSizes = new Float32Array(starSizes);
+
+        // --- 正方体 (地球内部) ---
+        const CUBE_SIZE = TARGET_EARTH_RADIUS * 0.4 * 2;
+        const cubeGeo = new THREE.BoxGeometry(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE);
+        const cubeEdges = new THREE.EdgesGeometry(cubeGeo);
+        const cubeMat = new THREE.LineBasicMaterial({
+            color: 0xffd700,
+            transparent: true,
+            opacity: 0.85,
+        });
+        const cube = new THREE.LineSegments(cubeEdges, cubeMat);
+        cube.visible = false;
+        solarSystem.add(cube);
+
+        // 正方体点击检测
+        const clickCubeGeo = new THREE.BoxGeometry(CUBE_SIZE * 1.3, CUBE_SIZE * 1.3, CUBE_SIZE * 1.3);
+        const clickCubeMat = new THREE.MeshBasicMaterial({ visible: false });
+        const clickCube = new THREE.Mesh(clickCubeGeo, clickCubeMat);
+        clickCube.userData.isCube = true;
+        solarSystem.add(clickCube);
+
+        // --- 正方体粒子 ---
+        const particleCount = 220;
+        const particleGeo = new THREE.BufferGeometry();
+        const particlePos = new Float32Array(particleCount * 3);
+        const particleColors = new Float32Array(particleCount * 3);
+        const particleSizes = new Float32Array(particleCount);
+        const particlePhases = new Float32Array(particleCount);
+        const PARTICLE_RADIUS = CUBE_SIZE * 1.6;
+
+        const gold = new THREE.Color(0xffd700);
+        const lightGold = new THREE.Color(0xfff0a0);
+        for (let i = 0; i < particleCount; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            const r = PARTICLE_RADIUS * (0.7 + Math.random() * 0.5);
+            particlePos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+            particlePos[i * 3 + 1] = r * Math.cos(phi) * 0.8;
+            particlePos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+            const c = gold.clone().lerp(lightGold, Math.random() * 0.6);
+            particleColors[i * 3] = c.r;
+            particleColors[i * 3 + 1] = c.g;
+            particleColors[i * 3 + 2] = c.b;
+            particleSizes[i] = 0.02 + Math.random() * 0.06;
+            particlePhases[i] = Math.random() * Math.PI * 2;
+        }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+        particleGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+        particleGeo.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1));
+
+        const particleMat = new THREE.PointsMaterial({
+            size: 0.06,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true,
+        });
+        const particles = new THREE.Points(particleGeo, particleMat);
+        particles.visible = false;
+        solarSystem.add(particles);
+
+        // --- 月球 ---
+        const MOON_RADIUS = 0.3;
+        const ORBIT_RADIUS = 2.5;
+        const moon = createLatLongSphere(MOON_RADIUS, 12, 18, 0x99ccff, 0.8);
+        moon.position.set(ORBIT_RADIUS, 0, 0);
+        const moonGroup = new THREE.Group();
+        moonGroup.add(moon);
+        solarSystem.add(moonGroup);
+        moon.visible = false;
+        moonGroup.visible = false;
+
+        // --- 轨道环 ---
+        const orbitRingGeo = new THREE.BufferGeometry();
+        const ringPoints = [];
+        const segments = 72;
+        for (let i = 0; i <= segments; i++) {
+            const angle = (i / segments) * Math.PI * 2;
+            ringPoints.push(ORBIT_RADIUS * Math.cos(angle), 0, ORBIT_RADIUS * Math.sin(angle));
+        }
+        orbitRingGeo.setAttribute('position', new THREE.Float32BufferAttribute(ringPoints, 3));
+        const ringMat = new THREE.LineBasicMaterial({ color: 0x4488cc, transparent: true, opacity: 0.10 });
+        const orbitRing = new THREE.Line(orbitRingGeo, ringMat);
+        solarSystem.add(orbitRing);
+        orbitRing.visible = false;
+
+        // ================================================================
+        //  4. 加载文字 & 逻辑
+        // ================================================================
+        const BINARY_STR =
+            '01000100 01110101 01101100 01100011 01101001 01110110 01101001 01110100 01100001';
+        const COLORS = { '0': '#5b9cf5', '1': '#7fc8ff' };
+        const rowLoad = document.getElementById('binaryRowLoad');
+        const chars = BINARY_STR.split('');
+        rowLoad.innerHTML = '';
+        let lastDelay = 0;
+        chars.forEach((ch, index) => {
+            const span = document.createElement('span');
+            span.className = 'char-load';
+            if (ch === ' ') {
+                span.classList.add('space');
+                span.textContent = '\u00A0';
+                span.style.opacity = '1';
+                span.style.transform = 'none';
+                span.style.animation = 'none';
+                span.style.width = '0.40em';
+                span.style.display = 'inline-block';
+            } else {
+                span.textContent = ch;
+                span.style.color = COLORS[ch] || '#5b9cf5';
+                const delay = index * 42 + 160;
+                lastDelay = delay;
+                span.style.animationDelay = delay + 'ms';
+                span.style.textShadow = '0 0 14px rgba(30,144,255,0.15)';
+            }
+            rowLoad.appendChild(span);
+        });
+        const lastCharIndex = chars.length - 1;
+        const lastDelayMs = lastCharIndex * 42 + 160;
+        const animDuration = 500;
+        const loadMinTime = lastDelayMs + animDuration + 200;
+
+        // ================================================================
+        //  5. 状态管理
+        // ================================================================
+        let isMoving = true;
+        const BASE_EARTH_ROTATION = 0.2;
+        const BASE_MOON_ROTATION = 0.4;
+        const BASE_ORBIT_SPEED = 0.5;
+
+        let isTransitioning = false;
+        let transitionProgress = 0;
+        const TRANSITION_DURATION = 2.2;
+
+        let targetScale = 1;
+        let currentScale = 1;
+        const MIN_SCALE = 0.35;
+        const MAX_SCALE = 2.4;
+
+        // ================================================================
+        //  6. DOM 引用
+        // ================================================================
+        const loadingScreen = document.getElementById('loading-screen');
+        const mainContent = document.getElementById('main-content');
+        const dynamicText = document.getElementById('dynamicText');
+        const motionStatus = document.getElementById('motionStatus');
+        const statusHint = document.getElementById('statusHint');
+        const musicOverlay = document.getElementById('music-overlay');
+        const gameOverlay = document.getElementById('game-overlay');
+        const playBtn = document.getElementById('playBtn');
+        const songStatus = document.getElementById('songStatus');
+        const waveformCanvas = document.getElementById('waveform');
+        const ctx = waveformCanvas.getContext('2d');
+
+        // ================================================================
+        //  7. 更新文字 & 状态
+        // ================================================================
+        function updateText() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const age = year - 2010;
+            document.getElementById('mainWord').textContent =
+                `在过去的时光里，我一共存活了 ${age} 年`;
+            document.getElementById('subWord').textContent =
+                `超越全球 24% 的人！`;
+        }
+        updateText();
+
+        function updateStatusDisplay() {
+            if (isMoving) {
+                motionStatus.textContent = '● 运行中';
+                motionStatus.style.color = 'rgba(80, 220, 100, 0.6)';
+                statusHint.innerHTML =
+                    '● 运行中 &nbsp;·&nbsp; 点击 <span class="highlight">■</span> 正方体暂停';
+            } else {
+                motionStatus.textContent = '● 已暂停';
+                motionStatus.style.color = 'rgba(255, 100, 80, 0.5)';
+                statusHint.innerHTML =
+                    '● 已暂停 &nbsp;·&nbsp; 点击 <span class="highlight">■</span> 正方体恢复';
+            }
+        }
+
+        // ================================================================
+        //  8. 文字淡入淡出 (视角变化)
+        // ================================================================
+        let textFadeTimer = null;
+
+        function fadeTextOut() {
+            dynamicText.classList.add('fading');
+            if (textFadeTimer) { clearTimeout(textFadeTimer);
+                textFadeTimer = null; }
+        }
+
+        function fadeTextIn() {
+            if (textFadeTimer) { clearTimeout(textFadeTimer);
+                textFadeTimer = null; }
+            textFadeTimer = setTimeout(() => {
+                dynamicText.classList.remove('fading');
+                textFadeTimer = null;
+            }, 300);
+        }
+        controls.addEventListener('start', fadeTextOut);
+        controls.addEventListener('end', fadeTextIn);
+
+        // ================================================================
+        //  9. 加载完成
+        // ================================================================
+        function finishLoading() {
+            loadingScreen.classList.add('hidden');
+            mainContent.classList.add('visible');
+            isTransitioning = true;
+            transitionProgress = 0;
+            camera.position.set(0, 1.8, 6.0);
+            controls.target.set(0, 0, 0);
+            controls.update();
+            controls.enabled = true;
+        }
+        setTimeout(finishLoading, loadMinTime);
+
+        // ================================================================
+        //  10. 点击交互 (正方体暂停/恢复)
+        // ================================================================
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        renderer.domElement.addEventListener('click', (event) => {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            if (clickCube.visible) {
+                const worldPos = new THREE.Vector3();
+                cube.getWorldPosition(worldPos);
+                clickCube.position.copy(worldPos);
+                const intersects = raycaster.intersectObject(clickCube);
+                if (intersects.length > 0) {
+                    isMoving = !isMoving;
+                    updateStatusDisplay();
+                    cubeMat.color.setHex(isMoving ? 0xffd700 : 0xff6644);
+                    return;
+                }
+            }
+        });
+
+        // ================================================================
+        //  11. 导航切换
+        // ================================================================
+        const navItems = document.querySelectorAll('.nav-item');
+        const navHome = document.getElementById('navHome');
+
+        function setActivePage(page) {
+            navItems.forEach(el => el.classList.remove('active'));
+            document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
+
+            // 隐藏所有覆盖层
+            musicOverlay.classList.remove('active');
+            gameOverlay.classList.remove('active');
+            mainContent.style.opacity = '0';
+            mainContent.style.pointerEvents = 'none';
+
+            // 显示对应页面
+            if (page === 'home') {
+                mainContent.style.opacity = '1';
+                mainContent.style.pointerEvents = 'none';
+                // 恢复地月系统可见 (通过CSS)
+                document.getElementById('canvas-container').style.opacity = '1';
+                // 停止音频播放
+                if (audioContext && audioContext.state === 'running') {
+                    // 不强制停止，但用户切换后音乐继续播放？这里让音乐继续，但隐藏波形？
+                    // 实际上用户说切换后不显示地月系统，但音乐可以继续播放
+                    // 我们让音乐继续，但波形隐藏？或者让音乐停止？
+                    // 用户说"切换为music时，会切换到新的页面上，此时不会显示之前的地月系统"
+                    // 所以地月系统被覆盖，但音乐页面显示
+                    // 当回到home时，音乐页面隐藏，地月系统显示
+                    // 音乐可以继续播放，但波形隐藏
+                }
+                // 让波形停止绘制
+                if (waveformAnimId) {
+                    cancelAnimationFrame(waveformAnimId);
+                    waveformAnimId = null;
+                }
+                // 清除波形
+                ctx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+                // 恢复地月系统显示
+                document.getElementById('canvas-container').style.opacity = '1';
+            } else if (page === 'music') {
+                musicOverlay.classList.add('active');
+                document.getElementById('canvas-container').style.opacity = '0.3';
+                // 启动波形绘制
+                if (!waveformAnimId && audioContext && audioContext.state === 'running') {
+                    drawWaveform();
+                } else if (!audioContext) {
+                    // 初始化音频
+                    initAudio();
+                }
+            } else if (page === 'game') {
+                gameOverlay.classList.add('active');
+                document.getElementById('canvas-container').style.opacity = '0.3';
+                if (waveformAnimId) {
+                    cancelAnimationFrame(waveformAnimId);
+                    waveformAnimId = null;
+                }
+            }
+        }
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const page = item.dataset.page;
+                setActivePage(page);
+            });
+        });
+
+        navHome.addEventListener('click', () => {
+            setActivePage('home');
+            // 重置视角
+            camera.position.set(0, 1.8, 6.0);
+            controls.target.set(0, 0, 0);
+            controls.update();
+            targetScale = 1;
+            currentScale = 1;
+            solarSystem.scale.set(1, 1, 1);
+            updateStars(1);
+        });
+
+        // ================================================================
+        //  12. 滚轮缩放 & 窗口自适应
+        // ================================================================
+        renderer.domElement.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.07 : 0.07;
+            targetScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, targetScale + delta));
+        }, { passive: false });
+
+        function onResize() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+            if (w < 480) {
+                camera.position.set(0, 1.5, 7.5);
+            } else if (w < 768) {
+                camera.position.set(0, 1.6, 6.5);
+            } else {
+                camera.position.set(0, 1.8, 6.0);
+            }
+            controls.update();
+            // 波形canvas尺寸
+            const containerEl = document.getElementById('waveform-container');
+            const rect = containerEl.getBoundingClientRect();
+            waveformCanvas.width = rect.width * devicePixelRatio;
+            waveformCanvas.height = rect.height * devicePixelRatio;
+            waveformCanvas.style.width = rect.width + 'px';
+            waveformCanvas.style.height = rect.height + 'px';
+        }
+        window.addEventListener('resize', onResize);
+        setTimeout(onResize, 200);
+
+        // ================================================================
+        //  13. 星空更新
+        // ================================================================
+        function updateStars(scaleFactor) {
+            const posAttr = stars.geometry.attributes.position;
+            const array = posAttr.array;
+            const offset = (scaleFactor - 1) * 0.4;
+            for (let i = 0; i < array.length; i += 3) {
+                const idx = i / 3;
+                const theta = idx * 0.007;
+                const r = 6 + (idx % 22);
+                const baseX = r * Math.sin(theta * 2.7) * Math.cos(theta * 1.9);
+                const baseY = r * Math.cos(theta * 1.3) * 0.5;
+                const baseZ = r * Math.sin(theta * 1.5) * Math.sin(theta * 2.3);
+                array[i] = baseX + offset * Math.sin(theta * 4.1) * 0.6;
+                array[i + 1] = baseY + offset * Math.cos(theta * 3.3) * 0.4;
+                array[i + 2] = baseZ + offset * Math.sin(theta * 4.7) * 0.6;
+            }
+            posAttr.needsUpdate = true;
+            const sizeAttr = stars.geometry.attributes.size;
+            if (sizeAttr) {
+                const sizes = sizeAttr.array;
+                for (let i = 0; i < sizes.length; i++) {
+                    sizes[i] = baseStarSizes[i] * (0.7 + 0.5 * scaleFactor);
+                }
+                sizeAttr.needsUpdate = true;
+            }
+            starMat.opacity = 0.30 + 0.25 * (scaleFactor - 0.3);
+        }
+
+        // ================================================================
+        //  14. 音频 & 波形
+        // ================================================================
+        let audioContext = null;
+        let audioElement = null;
+        let sourceNode = null;
+        let analyser = null;
+        let waveformAnimId = null;
+        let isAudioReady = false;
+
+        function initAudio() {
+            try {
+                audioContext = new(window.AudioContext || window.webkitAudioContext)();
+                audioElement = new Audio('crystalchime.mp3');
+                audioElement.crossOrigin = 'anonymous';
+                audioElement.preload = 'auto';
+
+                audioElement.addEventListener('canplaythrough', () => {
+                    if (audioContext && audioContext.state === 'suspended') {
+                        audioContext.resume();
+                    }
+                    setupAudioNodes();
+                });
+
+                audioElement.addEventListener('error', () => {
+                    songStatus.textContent = '❌ 文件加载失败';
+                    console.warn('无法加载 crystalchime.mp3，请确认文件存在');
+                });
+
+                audioElement.load();
+            } catch (e) {
+                console.warn('Web Audio API 不支持', e);
+                songStatus.textContent = '⚠️ 音频不支持';
+            }
+        }
+
+        function setupAudioNodes() {
+            if (!audioContext || !audioElement) return;
+            try {
+                sourceNode = audioContext.createMediaElementSource(audioElement);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                analyser.smoothingTimeConstant = 0.8;
+                sourceNode.connect(analyser);
+                analyser.connect(audioContext.destination);
+                isAudioReady = true;
+                songStatus.textContent = '✅ 就绪';
+                // 如果音乐页面是激活的，开始绘制
+                if (musicOverlay.classList.contains('active')) {
+                    drawWaveform();
+                }
+            } catch (e) {
+                console.warn('音频节点设置失败', e);
+                songStatus.textContent = '⚠️ 节点错误';
+            }
+        }
+
+        // 播放/暂停
+        playBtn.addEventListener('click', () => {
+            if (!audioContext) {
+                initAudio();
+                return;
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            if (!isAudioReady) {
+                songStatus.textContent = '⏳ 加载中...';
+                return;
+            }
+            if (audioElement.paused) {
+                audioElement.play().then(() => {
+                    playBtn.textContent = '⏸';
+                    playBtn.classList.add('playing');
+                    songStatus.textContent = '▶ 播放中';
+                    if (musicOverlay.classList.contains('active')) {
+                        drawWaveform();
+                    }
+                }).catch(e => {
+                    console.warn('播放失败', e);
+                    songStatus.textContent = '⚠️ 播放失败';
+                });
+            } else {
+                audioElement.pause();
+                playBtn.textContent = '▶';
+                playBtn.classList.remove('playing');
+                songStatus.textContent = '⏸ 已暂停';
+                if (waveformAnimId) {
+                    cancelAnimationFrame(waveformAnimId);
+                    waveformAnimId = null;
+                }
+            }
+        });
+
+        // 波形绘制
+        function drawWaveform() {
+            if (!analyser || !audioElement || audioElement.paused) {
+                // 如果暂停，仍然绘制静音波形？
+                // 如果暂停且没有音频数据，可以绘制一条直线
+                if (audioElement && audioElement.paused) {
+                    // 绘制直线
+                    const w = waveformCanvas.width;
+                    const h = waveformCanvas.height;
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.strokeStyle = 'rgba(80, 180, 255, 0.15)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(0, h / 2);
+                    ctx.lineTo(w, h / 2);
+                    ctx.stroke();
+                }
+                waveformAnimId = requestAnimationFrame(drawWaveform);
+                return;
+            }
+
+            const dataArray = new Uint8Array(analyser.fftSize);
+            analyser.getByteTimeDomainData(dataArray);
+
+            const w = waveformCanvas.width;
+            const h = waveformCanvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // 渐变背景
+            const grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, 'rgba(10, 30, 60, 0.0)');
+            grad.addColorStop(0.5, 'rgba(30, 100, 200, 0.03)');
+            grad.addColorStop(1, 'rgba(10, 30, 60, 0.0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+
+            const step = Math.max(1, Math.floor(dataArray.length / w));
+            const halfH = h / 2;
+
+            // 绘制主波形 (发光)
+            ctx.shadowColor = 'rgba(80, 180, 255, 0.3)';
+            ctx.shadowBlur = 12;
+            ctx.strokeStyle = 'rgba(100, 200, 255, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < w; i++) {
+                const idx = Math.min(Math.floor(i * step), dataArray.length - 1);
+                const val = (dataArray[idx] - 128) / 128;
+                const y = halfH + val * halfH * 0.9;
+                if (i === 0) ctx.moveTo(i, y);
+                else ctx.lineTo(i, y);
+            }
+            ctx.stroke();
+
+            // 内发光细线
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = 'rgba(180, 220, 255, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let i = 0; i < w; i++) {
+                const idx = Math.min(Math.floor(i * step), dataArray.length - 1);
+                const val = (dataArray[idx] - 128) / 128;
+                const y = halfH + val * halfH * 0.85;
+                if (i === 0) ctx.moveTo(i, y);
+                else ctx.lineTo(i, y);
+            }
+            ctx.stroke();
+
+            // 中心参考线
+            ctx.strokeStyle = 'rgba(80, 180, 255, 0.04)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 8]);
+            ctx.beginPath();
+            ctx.moveTo(0, halfH);
+            ctx.lineTo(w, halfH);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 峰值指示点
+            let maxVal = 0;
+            let maxIdx = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                const v = Math.abs(dataArray[i] - 128);
+                if (v > maxVal) { maxVal = v;
+                    maxIdx = i; }
+            }
+            if (maxVal > 10) {
+                const peakX = (maxIdx / dataArray.length) * w;
+                const peakY = halfH + ((dataArray[maxIdx] - 128) / 128) * halfH * 0.9;
+                ctx.shadowColor = 'rgba(247, 201, 72, 0.5)';
+                ctx.shadowBlur = 20;
+                ctx.fillStyle = 'rgba(247, 201, 72, 0.3)';
+                ctx.beginPath();
+                ctx.arc(peakX, peakY, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            waveformAnimId = requestAnimationFrame(drawWaveform);
+        }
+
+        // 初始时，如果音乐页面激活，尝试初始化
+        // 但加载完成后默认是home页面
+
+        // ================================================================
+        //  15. 动画循环
+        // ================================================================
+        const clock = new THREE.Clock();
+
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        let particleTime = 0;
+
+        function animate() {
+            const delta = Math.min(clock.getDelta(), 0.05);
+            const elapsed = clock.getElapsedTime();
+            particleTime += delta;
+
+            // 加载球体自转
+            earth.rotation.y -= delta * 0.4;
+
+            // 过渡
+            if (isTransitioning) {
+                transitionProgress += delta / TRANSITION_DURATION;
+                if (transitionProgress >= 1) {
+                    transitionProgress = 1;
+                    isTransitioning = false;
+                    moon.visible = true;
+                    moonGroup.visible = true;
+                    orbitRing.visible = true;
+                    cube.visible = true;
+                    clickCube.visible = true;
+                    particles.visible = true;
+                    earth.rotation.x = 0;
+                    earth.rotation.z = 0;
+                    moon.position.set(ORBIT_RADIUS, 0, 0);
+                    cube.position.set(0, 0, 0);
+                    clickCube.position.set(0, 0, 0);
+                    updateStatusDisplay();
+                }
+                const t = easeInOutCubic(transitionProgress);
+                const s = 1 - (1 - TARGET_EARTH_RADIUS / LOADING_RADIUS) * t;
+                earth.scale.set(s, s, s);
+                const cs = s;
+                cube.scale.set(cs, cs, cs);
+                clickCube.scale.set(cs, cs, cs);
+                // 粒子随着地球缩放
+                particles.scale.set(s, s, s);
+            }
+
+            // 主运动
+            if (!isTransitioning && moon.visible) {
+                if (isMoving) {
+                    earth.rotation.y -= delta * BASE_EARTH_ROTATION;
+                    const orbitAngle = elapsed * BASE_ORBIT_SPEED;
+                    const radius = ORBIT_RADIUS;
+                    moon.position.x = radius * Math.cos(orbitAngle);
+                    moon.position.z = radius * Math.sin(orbitAngle);
+                    moon.position.y = 0.15 * Math.sin(orbitAngle * 1.3);
+                    moon.rotation.y -= delta * BASE_MOON_ROTATION;
+                }
+
+                // 正方体独立旋转 (与地球反向)
+                cube.rotation.y += delta * 0.7;
+                cube.rotation.x += delta * 0.05;
+                cube.rotation.z += delta * 0.03;
+
+                // 粒子围绕正方体旋转
+                const posAttr = particles.geometry.attributes.position;
+                const array = posAttr.array;
+                const baseR = PARTICLE_RADIUS;
+                for (let i = 0; i < particleCount; i++) {
+                    const phase = particlePhases[i];
+                    const speed = 0.3 + (i % 5) * 0.04;
+                    const tAngle = particleTime * speed + phase;
+                    const rOffset = 0.7 + 0.3 * Math.sin(particleTime * 0.2 + i);
+                    const r = baseR * rOffset;
+                    const theta = tAngle * 1.1 + i * 0.1;
+                    const phi = Math.PI / 2 + 0.4 * Math.sin(tAngle * 0.7 + i * 0.2);
+                    array[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                    array[i * 3 + 1] = r * Math.cos(phi) * 0.7 + 0.15 * Math.sin(tAngle * 1.3 + i);
+                    array[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+                }
+                posAttr.needsUpdate = true;
+
+                // 粒子大小闪烁
+                const sizeAttr = particles.geometry.attributes.size;
+                if (sizeAttr) {
+                    const sizes = sizeAttr.array;
+                    for (let i = 0; i < particleCount; i++) {
+                        const base = 0.02 + (i % 5) * 0.008;
+                        sizes[i] = base * (0.8 + 0.4 * Math.sin(particleTime * 1.5 + i * 0.5));
+                    }
+                    sizeAttr.needsUpdate = true;
+                }
+
+                // 更新点击cube位置
+                clickCube.position.copy(cube.position);
+
+                // 缩放
+                currentScale += (targetScale - currentScale) * 0.08;
+                solarSystem.scale.set(currentScale, currentScale, currentScale);
+                updateStars(currentScale);
+                orbitRing.material.opacity = 0.06 + 0.12 * (currentScale - 0.35) / 2.0;
+            }
+
+            stars.rotation.y += delta * 0.006;
+            controls.update();
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // ================================================================
+        //  16. 初始化
+        // ================================================================
+        setTimeout(() => {
+            updateStars(1);
+            updateStatusDisplay();
+            // 波形canvas尺寸
+            const containerEl = document.getElementById('waveform-container');
+            const rect = containerEl.getBoundingClientRect();
+            waveformCanvas.width = rect.width * devicePixelRatio;
+            waveformCanvas.height = rect.height * devicePixelRatio;
+            waveformCanvas.style.width = rect.width + 'px';
+            waveformCanvas.style.height = rect.height + 'px';
+            // 绘制初始直线
+            const w = waveformCanvas.width;
+            const h = waveformCanvas.height;
+            ctx.clearRect(0, 0, w, h);
+            ctx.strokeStyle = 'rgba(80, 180, 255, 0.08)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, h / 2);
+            ctx.lineTo(w, h / 2);
+            ctx.stroke();
+        }, 200);
+
+        // 窗口resize时更新波形canvas
+        window.addEventListener('resize', () => {
+            const containerEl = document.getElementById('waveform-container');
+            const rect = containerEl.getBoundingClientRect();
+            waveformCanvas.width = rect.width * devicePixelRatio;
+            waveformCanvas.height = rect.height * devicePixelRatio;
+            waveformCanvas.style.width = rect.width + 'px';
+            waveformCanvas.style.height = rect.height + 'px';
+        });
+
+        // ================================================================
+        //  17. 控制台
+        // ================================================================
+        console.log('✦ Dulcivita · 地月系统 + 音乐播放器');
+        console.log(`  编码: ${BINARY_STR}`);
+        console.log('  含义: Dulcivita');
+        console.log('  🌍 地球自西向东自转');
+        console.log('  ■ 正方体反方向旋转 + 粒子环绕');
+        console.log('  🎵 点击 Music 进入音乐播放器');
+        console.log('  🖱 滚轮缩放 · 拖拽旋转');
+    </script>
+
+</body>
+</html>
