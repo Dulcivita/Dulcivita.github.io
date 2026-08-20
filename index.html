@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dulcivitaの小窝</title>
     <style>
-/* 闲着没事看我源码干什么玩意儿啊 */
+        /* 全局重置 & 基础 */
         * {
             margin: 0;
             padding: 0;
@@ -20,7 +20,7 @@
             height: 100vh;
         }
 
-        /*  Three.js 画布容器 */
+        /* Three.js 画布 */
         #canvas-container {
             position: fixed;
             top: 0;
@@ -30,6 +30,7 @@
             z-index: 0;
         }
 
+        /* 加载屏幕 */
         #loading-screen {
             position: fixed;
             top: 0;
@@ -129,8 +130,7 @@
             border-radius: 4px;
             opacity: 0;
             transform: translateY(10px);
-            animation: nameFadeIn 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-            animation-delay: 0.4s;
+            animation: nameFadeIn 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards, nameGlow 4.5s ease-in-out infinite 2.0s;
         }
         @keyframes nameFadeIn {
             0% {
@@ -144,13 +144,8 @@
                 text-shadow: 0 0 24px rgba(30, 144, 255, 0.20), 0 0 64px rgba(30, 144, 255, 0.06);
             }
         }
-        .name-load {
-            animation: nameFadeIn 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards,
-                nameGlow 4.5s ease-in-out infinite 2.0s;
-        }
         @keyframes nameGlow {
-            0%,
-            100% {
+            0%, 100% {
                 text-shadow: 0 0 20px rgba(30, 144, 255, 0.18), 0 0 60px rgba(30, 144, 255, 0.05);
                 border-color: rgba(60, 160, 255, 0.10);
             }
@@ -197,6 +192,7 @@
             }
         }
 
+        /* 导航栏 */
         .navbar {
             position: fixed;
             top: 0;
@@ -273,6 +269,7 @@
             border-bottom-color: rgba(80, 180, 255, 0.3);
         }
 
+        /* 主内容（Home） */
         #main-content {
             position: fixed;
             top: 0;
@@ -288,7 +285,6 @@
             opacity: 1;
             pointer-events: none;
         }
-
         .side-text {
             position: fixed;
             right: 5%;
@@ -323,7 +319,6 @@
             border-top: 1px solid rgba(60, 160, 255, 0.10);
             padding-top: 10px;
         }
-
         .status-hint {
             position: fixed;
             bottom: 24px;
@@ -336,9 +331,6 @@
             pointer-events: none;
             user-select: none;
             transition: opacity 0.6s;
-        }
-        .status-hint .highlight {
-            color: rgba(247, 201, 72, 0.5);
         }
         .footer-deco-main {
             position: fixed;
@@ -353,6 +345,7 @@
             user-select: none;
         }
 
+        /* Tools 覆盖层 */
         #tools-overlay {
             position: fixed;
             top: 0;
@@ -371,22 +364,60 @@
         #tools-overlay.active {
             display: flex;
         }
-        .tools-content {
+        .tools-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            max-width: 900px;
+            padding: 20px;
+        }
+        .tools-card {
+            background: rgba(20, 40, 80, 0.25);
+            border: 1px solid rgba(60, 160, 255, 0.12);
+            border-radius: 12px;
+            padding: 28px 32px 32px 32px;
+            width: 260px;
             text-align: center;
-            color: rgba(176, 212, 255, 0.3);
-            letter-spacing: 0.2em;
+            cursor: pointer;
+            transition: background 0.3s, border-color 0.3s, transform 0.2s;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
         }
-        .tools-content h2 {
-            font-size: 32px;
-            font-weight: 300;
-            margin-bottom: 12px;
-            color: rgba(176, 212, 255, 0.4);
+        .tools-card:hover {
+            background: rgba(30, 70, 140, 0.30);
+            border-color: rgba(80, 180, 255, 0.30);
+            transform: translateY(-4px);
         }
-        .tools-content p {
-            font-size: 14px;
-            color: rgba(176, 212, 255, 0.2);
+        .tools-card .card-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .tools-card .card-icon img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            border-radius: 8px;
+        }
+        .tools-card .card-title {
+            font-size: 18px;
+            font-weight: 400;
+            letter-spacing: 0.10em;
+            color: #b0d4ff;
+            margin-top: 6px;
+        }
+        .tools-card .card-desc {
+            font-size: 12px;
+            color: rgba(176, 212, 255, 0.35);
+            margin-top: 6px;
+            letter-spacing: 0.06em;
         }
 
+        /* Game 覆盖层 */
         #game-overlay {
             position: fixed;
             top: 0;
@@ -421,108 +452,45 @@
             color: rgba(176, 212, 255, 0.2);
         }
 
+        /* 响应式 */
         @media (max-width: 768px) {
-            .navbar {
-                padding: 10px 16px;
-            }
-            .nav-icon {
-                width: 32px;
-                height: 32px;
-            }
-            .nav-title {
-                font-size: 14px;
-                margin-left: 0;
-            }
-            .nav-right {
-                gap: 14px;
-            }
-            .nav-item {
-                font-size: 12px;
-            }
-            .side-text {
-                right: 3%;
-                max-width: 60%;
-            }
-            .side-text .main-word {
-                font-size: clamp(16px, 3vw, 30px);
-            }
-            .side-text .sub-word {
-                font-size: clamp(9px, 1.1vw, 14px);
-            }
-            .status-hint {
-                display: none;
-            }
-            .binary-row-load {
-                font-size: clamp(7px, 1.8vw, 16px);
-            }
-            .binary-wrapper-load {
-                padding: 4px 10px;
-            }
-            .name-load {
-                font-size: clamp(9px, 1.4vw, 16px);
-                padding: 3px 12px;
-            }
-            .tools-content h2,
-            .game-content h2 {
-                font-size: 24px;
-            }
+            .navbar { padding: 10px 16px; }
+            .nav-icon { width: 32px; height: 32px; }
+            .nav-title { font-size: 14px; }
+            .nav-right { gap: 14px; }
+            .nav-item { font-size: 12px; }
+            .side-text { right: 3%; max-width: 60%; }
+            .side-text .main-word { font-size: clamp(16px, 3vw, 30px); }
+            .side-text .sub-word { font-size: clamp(9px, 1.1vw, 14px); }
+            .binary-row-load { font-size: clamp(7px, 1.8vw, 16px); }
+            .binary-wrapper-load { padding: 4px 10px; }
+            .name-load { font-size: clamp(9px, 1.4vw, 16px); padding: 3px 12px; }
+            .tools-container { gap: 24px; padding: 12px; }
+            .tools-card { width: 200px; padding: 20px 18px 24px 18px; }
+            .tools-card .card-icon img { width: 48px; height: 48px; }
+            .tools-card .card-title { font-size: 15px; }
+            .status-hint { display: none; }
         }
         @media (max-width: 480px) {
-            .navbar {
-                padding: 6px 10px;
-            }
-            .nav-icon {
-                width: 26px;
-                height: 26px;
-                border-width: 1.5px;
-            }
-            .nav-title {
-                font-size: 11px;
-            }
-            .nav-item {
-                font-size: 10px;
-                gap: 10px;
-            }
-            .side-text {
-                right: 2%;
-                max-width: 70%;
-            }
-            .side-text .main-word {
-                font-size: clamp(13px, 2.8vw, 22px);
-            }
-            .side-text .sub-word {
-                font-size: clamp(7px, 1vw, 11px);
-                padding-top: 4px;
-                margin-top: 4px;
-            }
-            .binary-row-load {
-                font-size: clamp(4px, 1.3vw, 10px);
-            }
-            .binary-wrapper-load {
-                padding: 2px 6px;
-                border-radius: 4px;
-            }
-            .name-load {
-                font-size: clamp(7px, 1.2vw, 12px);
-                padding: 2px 8px;
-                border-width: 1px;
-            }
-            .blob-bg {
-                width: 80vmin;
-                height: 80vmin;
-                filter: blur(60px);
-            }
-            .footer-deco-main {
-                display: none;
-            }
-            .tools-content h2,
-            .game-content h2 {
-                font-size: 18px;
-            }
-            .tools-content p,
-            .game-content p {
-                font-size: 11px;
-            }
+            .navbar { padding: 6px 10px; }
+            .nav-icon { width: 26px; height: 26px; border-width: 1.5px; }
+            .nav-title { font-size: 11px; }
+            .nav-item { font-size: 10px; }
+            .nav-right { gap: 10px; }
+            .side-text { right: 2%; max-width: 70%; }
+            .side-text .main-word { font-size: clamp(13px, 2.8vw, 22px); }
+            .side-text .sub-word { font-size: clamp(7px, 1vw, 11px); padding-top: 4px; margin-top: 4px; }
+            .binary-row-load { font-size: clamp(4px, 1.3vw, 10px); }
+            .binary-wrapper-load { padding: 2px 6px; border-radius: 4px; }
+            .name-load { font-size: clamp(7px, 1.2vw, 12px); padding: 2px 8px; border-width: 1px; }
+            .blob-bg { width: 80vmin; height: 80vmin; filter: blur(60px); }
+            .footer-deco-main { display: none; }
+            .tools-card { width: 160px; padding: 16px 12px 18px 12px; }
+            .tools-card .card-icon img { width: 40px; height: 40px; }
+            .tools-card .card-title { font-size: 13px; }
+            .tools-card .card-desc { font-size: 10px; }
+            .game-content h2, .tools-content h2 { font-size: 18px; }
+            .game-content p, .tools-content p { font-size: 11px; }
         }
     </style>
 </head>
@@ -542,6 +510,7 @@
         </div>
     </div>
 
+    <!-- 导航栏 -->
     <nav class="navbar">
         <div class="nav-left" id="navHome">
             <div class="nav-icon">
@@ -556,27 +525,34 @@
         </div>
     </nav>
 
-
+    <!-- 主内容 -->
     <div id="main-content">
         <div class="side-text" id="dynamicText">
             <div class="main-word" id="mainWord">欢迎来到 Dulcivita Club!!!</div>
             <div class="sub-word" id="subWord">Welcome TO Dulcivita Club, Wish U Luck</div>
         </div>
         <div class="status-hint" id="statusHint">
-            <span id="motionStatus"></span> &nbsp;·&nbsp;  <span class="highlight"></span> 
+            <span id="motionStatus"></span> &nbsp;·&nbsp; <span class="highlight"></span>
         </div>
-        <div class="footer-deco-main">✦ 3D · 地月系统</div>
+        <div class="footer-deco-main"></div>
     </div>
 
-    <!-- Tools -->
+    <!-- Tools 覆盖层 -->
     <div id="tools-overlay">
-        <div class="tools-content">
-            <h2>Tools</h2>
-            <p>？？？</p>
+        <div class="tools-container">
+            <!-- 模拟原神祈愿卡片（点击跳转到 wish.html） -->
+            <div class="tools-card" id="wishEntry">
+                <span class="card-icon">
+                    <img src="qiyuan/yuanshi.png" alt="原神" onerror="this.style.display='none'" />
+                </span>
+                <div class="card-title">模拟原神祈愿</div>
+                <div class="card-desc">Genshin Wish Simulator</div>
+            </div>
+            <!-- 可继续添加其他工具卡片 -->
         </div>
     </div>
 
-    <!-- Game -->
+    <!-- Game 覆盖层 -->
     <div id="game-overlay">
         <div class="game-content">
             <h2>Game</h2>
@@ -595,6 +571,9 @@
     </script>
 
     <script type="module">
+        // ============================================================
+        //  1. Three.js 场景（保留原样）
+        // ============================================================
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -668,7 +647,6 @@
 
             const baseColor = new THREE.Color(color);
 
-            // AI write de xiao cai dan
             const material = new THREE.ShaderMaterial({
                 uniforms: {
                     uCameraPos: { value: camera.position.clone() },
@@ -677,38 +655,31 @@
                     uRadius: { value: radius },
                 },
                 vertexShader: `
-                    uniform vec3 uCameraPos;
-                    uniform float uRadius;
-                    varying float vAlpha;
-                    varying vec3 vColorOut;
-
-                    void main() {
-                        vec4 worldPos = modelMatrix * vec4(position, 1.0);
-                        // 法线：归一化的顶点位置（模型空间）
-                        vec3 normal = normalize((modelMatrix * vec4(normalize(position), 0.0)).xyz);
-                        vec3 viewDir = normalize(uCameraPos - worldPos.xyz);
-                        float dotProduct = dot(normal, viewDir);
-                        // 映射到0.25-1.0，使得背面仍然可见但较淡
-                        float factor = 0.25 + 0.75 * max(0.0, dotProduct);
-                        // 透明度：背面降低
-                        vAlpha = factor;
-                        // 颜色亮度：背面稍微变暗但保持基础亮度
-                        float brightness = 0.45 + 0.55 * max(0.0, dotProduct);
-                        vColorOut = vec3(0.36, 0.61, 0.96) * brightness;
-                        gl_Position = projectionMatrix * viewMatrix * worldPos;
-                    }
-                `,
+                            uniform vec3 uCameraPos;
+                            uniform float uRadius;
+                            varying float vAlpha;
+                            varying vec3 vColorOut;
+                            void main() {
+                                vec4 worldPos = modelMatrix * vec4(position, 1.0);
+                                vec3 normal = normalize((modelMatrix * vec4(normalize(position), 0.0)).xyz);
+                                vec3 viewDir = normalize(uCameraPos - worldPos.xyz);
+                                float dotProduct = dot(normal, viewDir);
+                                float factor = 0.25 + 0.75 * max(0.0, dotProduct);
+                                vAlpha = factor;
+                                float brightness = 0.45 + 0.55 * max(0.0, dotProduct);
+                                vColorOut = vec3(0.36, 0.61, 0.96) * brightness;
+                                gl_Position = projectionMatrix * viewMatrix * worldPos;
+                            }
+                        `,
                 fragmentShader: `
-                    varying float vAlpha;
-                    varying vec3 vColorOut;
-                    uniform float uOpacity;
-
-                    void main() {
-                        float finalAlpha = vAlpha * uOpacity;
-                        // 边缘微微发光效果
-                        gl_FragColor = vec4(vColorOut, finalAlpha * 0.92);
-                    }
-                `,
+                            varying float vAlpha;
+                            varying vec3 vColorOut;
+                            uniform float uOpacity;
+                            void main() {
+                                float finalAlpha = vAlpha * uOpacity;
+                                gl_FragColor = vec4(vColorOut, finalAlpha * 0.92);
+                            }
+                        `,
                 transparent: true,
                 depthWrite: false,
                 blending: THREE.NormalBlending,
@@ -850,7 +821,7 @@
             color: 0x4488cc,
             transparent: true,
             opacity: 0
-        }); 
+        });
         const orbitRing = new THREE.Line(orbitRingGeo, ringMat);
         solarSystem.add(orbitRing);
         orbitRing.visible = false;
@@ -861,7 +832,6 @@
         const rowLoad = document.getElementById('binaryRowLoad');
         const chars = BINARY_STR.split('');
         rowLoad.innerHTML = '';
-        let lastDelay = 0;
         chars.forEach((ch, index) => {
             const span = document.createElement('span');
             span.className = 'char-load';
@@ -877,7 +847,6 @@
                 span.textContent = ch;
                 span.style.color = COLORS[ch] || '#5b9cf5';
                 const delay = index * 42 + 160;
-                lastDelay = delay;
                 span.style.animationDelay = delay + 'ms';
                 span.style.textShadow = '0 0 14px rgba(30,144,255,0.15)';
             }
@@ -887,6 +856,7 @@
         const lastDelayMs = lastCharIndex * 42 + 160;
         const animDuration = 500;
         const loadMinTime = lastDelayMs + animDuration + 200;
+
         let isMoving = true;
         const BASE_EARTH_ROTATION = 0.2;
         const BASE_MOON_ROTATION = 0.4;
@@ -910,13 +880,11 @@
             if (isMoving) {
                 motionStatus.textContent = '● 运行中';
                 motionStatus.style.color = 'rgba(80, 220, 100, 0.6)';
-                statusHint.innerHTML =
-                    '反正你也看不到，我可要偷偷骂你啦';
+                statusHint.innerHTML = '反正你也看不到，我可要偷偷骂你啦';
             } else {
                 motionStatus.textContent = '● 已暂停';
                 motionStatus.style.color = 'rgba(255, 100, 80, 0.5)';
-                statusHint.innerHTML =
-                    '笨蛋！算你聪明！';
+                statusHint.innerHTML = '笨蛋！算你聪明！';
             }
         }
 
@@ -938,6 +906,7 @@
         }
         controls.addEventListener('start', fadeTextOut);
         controls.addEventListener('end', fadeTextIn);
+
         function finishLoading() {
             loadingScreen.classList.add('hidden');
             mainContent.classList.add('visible');
@@ -984,11 +953,11 @@
             gameOverlay.classList.remove('active');
             mainContent.style.opacity = '0';
             mainContent.style.pointerEvents = 'none';
+            document.getElementById('canvas-container').style.opacity = '1';
 
             if (page === 'home') {
                 mainContent.style.opacity = '1';
                 mainContent.style.pointerEvents = 'none';
-                document.getElementById('canvas-container').style.opacity = '1';
             } else if (page === 'tools') {
                 toolsOverlay.classList.add('active');
                 document.getElementById('canvas-container').style.opacity = '0.3';
@@ -1067,9 +1036,7 @@
             starMat.opacity = 0.30 + 0.25 * (scaleFactor - 0.3);
         }
 
-
         function updateAllPerspectiveUniforms(camPos) {
-            // 地球
             if (earth && earth.material && earth.material.uniforms) {
                 earth.material.uniforms.uCameraPos.value.copy(camPos);
             }
@@ -1077,7 +1044,6 @@
                 moon.material.uniforms.uCameraPos.value.copy(camPos);
             }
         }
-
 
         const clock = new THREE.Clock();
 
@@ -1091,7 +1057,7 @@
             const delta = Math.min(clock.getDelta(), 0.05);
             const elapsed = clock.getElapsedTime();
             particleTime += delta;
-			
+
             updateAllPerspectiveUniforms(camera.position);
             earth.rotation.y -= delta * 0.4;
             if (isTransitioning) {
@@ -1192,11 +1158,15 @@
         }
 
         animate();
-	//重头来一遍
+
         setTimeout(() => {
             updateStars(1);
             updateStatusDisplay();
         }, 200);
+
+        document.getElementById('wishEntry').addEventListener('click', () => {
+            window.location.href = 'wish.html';
+        });
     </script>
 
 </body>
