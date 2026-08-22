@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>猎棋</title>
     <style>
+        
+
         * {
             margin: 0;
             padding: 0;
@@ -33,6 +35,7 @@
             max-width: 1600px;
             justify-content: center;
             align-items: flex-start;
+            position: relative;
         }
 
         .capture-side {
@@ -195,6 +198,26 @@
             letter-spacing: 0.3px;
             margin-left: auto;
         }
+        /* 规则按钮样式 */
+        .rules-btn {
+            background: rgba(220, 185, 150, 0.15);
+            border: 1px solid rgba(220, 185, 150, 0.25);
+            color: #f0e6d8;
+            border-radius: 30px;
+            padding: 4px 14px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 6px;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+        .rules-btn:hover {
+            background: rgba(220, 185, 150, 0.3);
+            border-color: rgba(220, 185, 150, 0.5);
+            transform: scale(1.02);
+        }
+
         .turn-info {
             display: flex;
             justify-content: space-between;
@@ -416,6 +439,90 @@
             box-shadow: none;
         }
 
+        /* ----- 模态框样式 ----- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: rgba(35, 28, 22, 0.95);
+            border: 1px solid rgba(220, 185, 150, 0.2);
+            border-radius: 32px;
+            padding: 32px 36px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+            color: #f0e6d8;
+            position: relative;
+        }
+        .modal-box::-webkit-scrollbar {
+            width: 4px;
+        }
+        .modal-box::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        .modal-box::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 150, 0.3);
+            border-radius: 4px;
+        }
+        .modal-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #f5e8d6;
+            border-bottom: 1px solid rgba(220, 185, 150, 0.15);
+            padding-bottom: 14px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-close-btn {
+            background: rgba(220, 185, 150, 0.12);
+            border: 1px solid rgba(220, 185, 150, 0.2);
+            color: #e8d5c0;
+            border-radius: 40px;
+            padding: 4px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .modal-close-btn:hover {
+            background: rgba(220, 185, 150, 0.25);
+            border-color: rgba(220, 185, 150, 0.4);
+        }
+        .modal-body {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #e8dcc8;
+        }
+        .modal-body ul {
+            padding-left: 20px;
+            margin: 6px 0;
+            list-style-type: disc;
+        }
+        .modal-body li {
+            margin-bottom: 4px;
+        }
+        .modal-body p {
+            margin: 8px 0;
+        }
+
         @media (max-width: 1100px) {
             .game-container {
                 flex-wrap: wrap;
@@ -456,6 +563,10 @@
             }
             .panel {
                 order: 3;
+            }
+            .modal-box {
+                padding: 24px 20px;
+                max-width: 90%;
             }
         }
 
@@ -525,6 +636,15 @@
                 font-size: 14px;
                 min-height: 24px;
             }
+            .modal-box {
+                padding: 18px 16px;
+            }
+            .modal-title {
+                font-size: 19px;
+            }
+            .modal-body {
+                font-size: 14px;
+            }
         }
 
         @media (max-width: 450px) {
@@ -570,6 +690,8 @@
             <div class="panel-title">
                 <span>♟ 局面评估</span>
                 <span class="badge">实时</span>
+                <!-- 玩法介绍按钮 -->
+                <button class="rules-btn" id="rulesBtn">📖 玩法</button>
             </div>
 
             <div class="turn-info">
@@ -580,7 +702,7 @@
                 <div class="step-count">步数 <strong id="stepCount">0</strong></div>
             </div>
 
-            <div class="mode-hint" id="modeHint">我不会告诉你任何东西</div>
+            <div class="mode-hint" id="modeHint"></div>
 
             <div class="game-over-msg" id="gameOverMsg">&nbsp;</div>
 
@@ -616,9 +738,35 @@
         </div>
     </div>
 
+    <!-- 玩法介绍模态框 -->
+    <div class="modal-overlay" id="rulesModal">
+        <div class="modal-box">
+            <div class="modal-title">
+                <span>📖 玩法介绍</span>
+                <button class="modal-close-btn" id="closeRulesBtn">关闭</button>
+            </div>
+            <div class="modal-body">
+                <p>猎棋规则</p>
+                <ul>
+                    <li>棋盘为15x15网格。棋子分三类：王、后、兵。双方各有一枚王，兵可升变为后。</li>
+                    <li>开局：黑方先放黑王，白方再放白王，之后正式对局。</li>
+                    <li>每回合可选择：移动己方棋子，或在空位下一枚新兵，或放回俘虏（每回合限一次）。</li>
+                    <li>走法：王和兵均沿上下左右移动一格；后沿八个方向移动任意距离（不可越子）。</li>
+                    <li>兵到达棋盘边缘立即升变为后。</li>
+                    <li>吃子规则：普通棋子（兵或后）吃子时，双方棋子同时消失（湮灭），进攻方不进入俘虏，防守方进入俘虏。王吃子时，王存活移动至目标格，防守方进入俘虏。</li>
+                    <li>气与提子：同色棋子上下左右相邻为连通组，组气等于周围空格总数（重复空格只计一次）。组气≤1时整组被提，被提棋子进入俘虏（后被降级为兵）。</li>
+                    <li>俘虏放回：点击对方颜色的俘虏棋子进入放回模式，再点击棋盘空位放回。每回合限一次，放回后当前玩家可再走一步，然后才轮到对方。</li>
+                    <li>五子连珠：任意同色棋子（含王）在横、竖、斜方向连续五个，立即获胜。</li>
+                    <li>胜利条件：吃王或五子连珠。棋盘满子无人获胜则平局。</li>
+                    <li>禁止在已有棋子处落子。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============================================================
-        //  王棋 · 双人对战  ·  吃子湮灭（进攻方不进入俘虏）
+        //  王棋 · 双人对战  ·  完整游戏逻辑  +  规则弹窗
         // ============================================================
 
         const BOARD_SIZE = 15;
@@ -652,6 +800,11 @@
         const captureBlackSide = document.getElementById('captureBlackSide');
         const captureWhiteSide = document.getElementById('captureWhiteSide');
 
+        // 规则按钮和模态框
+        const rulesBtn = document.getElementById('rulesBtn');
+        const rulesModal = document.getElementById('rulesModal');
+        const closeRulesBtn = document.getElementById('closeRulesBtn');
+
         // 游戏状态
         let board = [];
         let gamePhase = 'placeBlackKing';
@@ -664,7 +817,7 @@
         let lastMove = null;
         let lastEvalSymbol = null;
 
-        let capturedPieces = []; // { color, type }  type 为 'king', 'queen', 'pawn'（后降级为兵）
+        let capturedPieces = [];
         let placeBackMode = false;
         let usedPlaceBackThisTurn = false;
 
@@ -672,7 +825,7 @@
         class Piece {
             constructor(color, type) {
                 this.color = color;
-                this.type = type; // 'king', 'queen', 'pawn'
+                this.type = type;
                 this.row = -1;
                 this.col = -1;
             }
@@ -912,13 +1065,11 @@
             if (!target) return false;
 
             const captured = board[toRow][toCol];
-            let capturedKing = false;
-            let movedPiece = null; // 用于记录最终存活的棋子（王吃子时移动）
+            let movedPiece = null;
 
-            // 处理吃子
             if (captured) {
                 if (piece.type === 'king') {
-                    // 王吃子：王存活，移动到目标格，防守王被吃判负
+                    // 王吃子：王存活移动
                     board[fromRow][fromCol] = null;
                     board[toRow][toCol] = piece;
                     piece.row = toRow;
@@ -928,25 +1079,24 @@
                         gameOver = true;
                         winner = piece.color;
                     } else {
-                        // 防守方进入俘虏（后降级）
                         let capturedType = captured.type;
                         if (capturedType === 'queen') capturedType = 'pawn';
                         capturedPieces.push({ color: captured.color, type: capturedType });
                     }
                 } else {
-                    // 普通棋子吃子：双方湮灭，进攻方直接消失（不进入俘虏），防守方进入俘虏
+                    // 普通棋子吃子：双方湮灭，进攻方直接消失
                     board[fromRow][fromCol] = null;
                     board[toRow][toCol] = null;
-                    movedPiece = null; // 进攻方消失
+                    movedPiece = null;
                     if (captured.type === 'king') {
                         gameOver = true;
-                        winner = piece.color; // 吃王方获胜
+                        winner = piece.color;
                     } else {
                         let capturedType = captured.type;
                         if (capturedType === 'queen') capturedType = 'pawn';
                         capturedPieces.push({ color: captured.color, type: capturedType });
                     }
-                    // 进攻方不进入俘虏，直接移除
+                    // 进攻方不进入俘虏
                 }
             } else {
                 // 普通移动
@@ -957,7 +1107,7 @@
                 movedPiece = piece;
             }
 
-            // 升变：仅当棋子存活且是兵且到达边缘
+            // 升变
             if (!gameOver && movedPiece && movedPiece.type === 'pawn') {
                 const isEdge = (toRow === 0 || toRow === BOARD_SIZE - 1 || toCol === 0 || toCol === BOARD_SIZE - 1);
                 if (isEdge) {
@@ -967,12 +1117,10 @@
 
             moveCount++;
 
-            // 气检查
             if (!gameOver) {
                 checkAndRemoveDeadPieces();
             }
 
-            // 五子连珠（检查当前玩家的颜色，但可能已切换，所以检查移动方颜色）
             if (!gameOver && movedPiece) {
                 if (checkFiveInRow(movedPiece.color)) {
                     gameOver = true;
@@ -980,7 +1128,7 @@
                 }
             }
 
-            // 记录最后一步（用于显示）
+            // 记录最后一步
             if (gameOver) {
                 if (movedPiece && board[toRow] && board[toRow][toCol] === movedPiece) {
                     lastMove = { from: { row: fromRow, col: fromCol }, to: { row: toRow, col: toCol }, piece: movedPiece,
@@ -999,7 +1147,6 @@
                 }
             }
 
-            // 切换玩家（放回后额外一步已处理）
             if (!gameOver) {
                 if (usedPlaceBackThisTurn) {
                     usedPlaceBackThisTurn = false;
@@ -1067,7 +1214,7 @@
             if (!has) return false;
 
             placeBackMode = true;
-            modeHint.textContent = '';
+            modeHint.textContent = '🔁 点击棋盘空位放回俘虏棋子';
             renderCapturedPieces();
             drawBoard();
             updatePanel();
@@ -1267,17 +1414,17 @@
             if (gameOver) {
                 if (winner === BLACK) {
                     turnDot.className = 'turn-dot win-black';
-                    turnText.textContent = '黑方赢了！';
-                    gameOverMsg.innerHTML = ' <span class="highlight">黑方</span> 获胜！';
+                    turnText.textContent = '黑方胜！';
+                    gameOverMsg.innerHTML = '🎉 <span class="highlight">黑方</span> 获胜！';
                 } else if (winner === WHITE) {
                     turnDot.className = 'turn-dot win-white';
-                    turnText.textContent = '白方赢了！';
-                    gameOverMsg.innerHTML = '<span class="highlight">白方</span> 获胜！';
+                    turnText.textContent = '白方胜！';
+                    gameOverMsg.innerHTML = '🎉 <span class="highlight">白方</span> 获胜！';
                 } else {
                     turnDot.className = 'turn-dot';
                     turnDot.style.background = '#888';
                     turnText.textContent = '平局';
-                    gameOverMsg.innerHTML = '棋盘已满，平局！';
+                    gameOverMsg.innerHTML = '平局！';
                 }
                 modeHint.textContent = '游戏已结束';
             } else {
@@ -1289,11 +1436,11 @@
                     turnText.textContent = '白方回合';
                 }
                 if (gamePhase === 'placeBlackKing') {
-                    gameOverMsg.innerHTML = '放置王棋阶段';
-                    modeHint.textContent = '放置王棋阶段';
+                    gameOverMsg.innerHTML = '布置王棋阶段';
+                    modeHint.textContent = '布置王棋阶段';
                 } else if (gamePhase === 'placeWhiteKing') {
-                    gameOverMsg.innerHTML = '放置王棋阶段';
-                    modeHint.textContent = '放置王棋阶段';
+                    gameOverMsg.innerHTML = '布置王棋阶段';
+                    modeHint.textContent = '布置王棋阶段';
                 } else {
                     gameOverMsg.innerHTML = '&nbsp;';
                     if (placeBackMode) {
@@ -1798,6 +1945,19 @@
             handleCanvasClick(e);
         }, { passive: false });
 
+        // ---------- 规则按钮事件 ----------
+        rulesBtn.addEventListener('click', () => {
+            rulesModal.classList.add('active');
+        });
+        closeRulesBtn.addEventListener('click', () => {
+            rulesModal.classList.remove('active');
+        });
+        rulesModal.addEventListener('click', (e) => {
+            if (e.target === rulesModal) {
+                rulesModal.classList.remove('active');
+            }
+        });
+
         // ---------- 重置 ----------
         resetBtn.addEventListener('click', () => {
             initGame();
@@ -1830,7 +1990,6 @@
         drawChart(history);
         resizeCanvases();
         setTimeout(resizeCanvases, 100);
-
     </script>
 
 </body>
