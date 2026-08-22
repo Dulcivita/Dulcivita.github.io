@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猎棋</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(ellipse at center, #2d241a 0%, #1a1410 100%);
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
+            padding: 20px;
+        }
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            background: rgba(60, 45, 35, 0.5);
+            backdrop-filter: blur(4px);
+            padding: 24px 30px;
+            border-radius: 48px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 0 2px rgba(255, 215, 150, 0.2);
+            border: 1px solid rgba(200, 160, 120, 0.15);
+            max-width: 1600px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .capture-side {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 12px 6px;
+            min-width: 48px;
+            min-height: 120px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 215, 150, 0.06);
+            align-items: center;
+            flex-shrink: 0;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .capture-side .label {
+            font-size: 12px;
+            color: #8a7a6a;
+            letter-spacing: 1px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(255, 215, 150, 0.08);
+            width: 100%;
+            text-align: center;
+        }
+        .capture-side .capture-stone {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        .capture-side .capture-stone:hover {
+            transform: scale(1.15);
+            border-color: #f0d080;
+            box-shadow: 0 0 20px rgba(200, 180, 80, 0.3);
+        }
+        .capture-side .capture-stone.black {
+            background: radial-gradient(circle at 35% 35%, #666, #111);
+        }
+        .capture-side .capture-stone.white {
+            background: radial-gradient(circle at 35% 35%, #fff, #c0c0c0);
+        }
+        .capture-side .capture-stone.king-mark::after {
+            content: '♛';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            color: #ffd700;
+            text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+        }
+        .capture-side .capture-stone.queen-mark::after {
+            content: '♕';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            color: #ffd700;
+            text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+        }
+        .capture-side .capture-stone.pawn-mark::after {
+            content: '♟';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            color: #ffd700;
+            text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+        }
+        .capture-side .capture-stone.disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+        .capture-side .capture-stone.disabled:hover {
+            transform: none;
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .capture-side .empty-hint {
+            color: #5a4a3a;
+            font-size: 11px;
+            padding: 12px 0;
+            text-align: center;
+        }
+        .capture-side::-webkit-scrollbar {
+            width: 4px;
+        }
+        .capture-side::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+        .capture-side::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 150, 0.2);
+            border-radius: 4px;
+        }
+
+        .board-wrapper {
+            position: relative;
+            flex-shrink: 0;
+        }
+        #boardCanvas {
+            display: block;
+            border-radius: 18px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(0, 0, 0, 0.3);
+            background: #d9b382;
+            cursor: pointer;
+            width: min(60vh, 60vw, 680px);
+            height: auto;
+            aspect-ratio: 1 / 1;
+        }
+
+        .panel {
+            flex: 0 0 280px;
+            min-width: 220px;
+            max-width: 340px;
+            background: rgba(35, 28, 22, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 24px 20px 20px;
+            border: 1px solid rgba(220, 185, 150, 0.12);
+            box-shadow: inset 0 1px 0 rgba(255, 215, 150, 0.06), 0 12px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            color: #f0e6d8;
+        }
+        .panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: #f5e8d6;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(220, 185, 150, 0.15);
+            padding-bottom: 12px;
+        }
+        .panel-title span {
+            background: linear-gradient(135deg, #e8c9a0, #d4a87a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+        .panel-title .badge {
+            background: rgba(220, 185, 150, 0.15);
+            border-radius: 40px;
+            padding: 2px 12px;
+            font-size: 12px;
+            font-weight: 400;
+            -webkit-text-fill-color: #d4c0b0;
+            letter-spacing: 0.3px;
+            margin-left: auto;
+        }
+        .turn-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 14px;
+            padding: 8px 14px;
+            border: 1px solid rgba(255, 215, 150, 0.06);
+        }
+        .turn-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .turn-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+            transition: background 0.25s, box-shadow 0.25s;
+        }
+        .turn-dot.black {
+            background: radial-gradient(circle at 35% 35%, #666, #111);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+        .turn-dot.white {
+            background: radial-gradient(circle at 35% 35%, #fff, #c0c0c0);
+            box-shadow: 0 2px 8px rgba(255, 255, 255, 0.25);
+        }
+        .turn-dot.win-black {
+            background: radial-gradient(circle at 35% 35%, #888, #222);
+            box-shadow: 0 0 20px rgba(200, 160, 100, 0.5);
+            border-color: #f0d080;
+        }
+        .turn-dot.win-white {
+            background: radial-gradient(circle at 35% 35%, #fff, #d0d0d0);
+            box-shadow: 0 0 20px rgba(255, 215, 150, 0.5);
+            border-color: #f0d080;
+        }
+        .step-count {
+            font-size: 13px;
+            color: #b8a898;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 3px 12px;
+            border-radius: 30px;
+            font-weight: 400;
+        }
+        .step-count strong {
+            color: #e8d5c0;
+            font-weight: 600;
+        }
+        .mode-hint {
+            font-size: 13px;
+            color: #d4c0a0;
+            padding: 4px 0;
+            text-align: center;
+            border-top: 1px solid rgba(255, 215, 150, 0.08);
+            margin-top: -2px;
+            min-height: 28px;
+        }
+        .game-over-msg {
+            text-align: center;
+            padding: 4px 0 2px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #f0d8b0;
+            letter-spacing: 0.5px;
+            min-height: 30px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+        .game-over-msg .highlight {
+            color: #f5e0b0;
+            text-shadow: 0 0 20px rgba(200, 160, 80, 0.3);
+        }
+
+        .winrate-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 2px 0;
+        }
+        .winrate-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .winrate-row .label {
+            width: 40px;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .winrate-row .label .stone {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .winrate-row .label .stone.b {
+            background: radial-gradient(circle at 35% 35%, #666, #111);
+        }
+        .winrate-row .label .stone.w {
+            background: radial-gradient(circle at 35% 35%, #fff, #c8c8c8);
+        }
+        .winrate-track {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 30px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+        .winrate-fill {
+            height: 100%;
+            border-radius: 30px;
+            transition: width 0.45s cubic-bezier(0.34, 1.2, 0.64, 1);
+            width: 50%;
+            position: relative;
+        }
+        .winrate-fill.b {
+            background: linear-gradient(90deg, #444, #222);
+            box-shadow: 0 0 12px rgba(100, 80, 60, 0.3);
+        }
+        .winrate-fill.w {
+            background: linear-gradient(90deg, #e8e8e8, #f5f5f5);
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
+        }
+        .winrate-value {
+            width: 48px;
+            text-align: right;
+            font-size: 14px;
+            font-weight: 600;
+            color: #f0e0cc;
+            flex-shrink: 0;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.3px;
+        }
+        .winrate-value.b {
+            color: #d0c0b0;
+        }
+        .winrate-value.w {
+            color: #f0e8e0;
+        }
+        .chart-container {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 14px;
+            padding: 10px 8px 4px;
+            border: 1px solid rgba(255, 215, 150, 0.05);
+        }
+        .chart-container .chart-title {
+            font-size: 11px;
+            color: #a09080;
+            letter-spacing: 0.5px;
+            padding-left: 2px;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .chart-container .chart-title .legend {
+            display: flex;
+            gap: 12px;
+        }
+        .chart-container .chart-title .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+        }
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .legend-dot.b {
+            background: radial-gradient(circle at 35% 35%, #666, #111);
+        }
+        .legend-dot.w {
+            background: radial-gradient(circle at 35% 35%, #fff, #c0c0c0);
+        }
+        #chartCanvas {
+            width: 100%;
+            height: 68px;
+            display: block;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.15);
+        }
+        .btn-reset {
+            background: rgba(220, 185, 150, 0.08);
+            border: 1px solid rgba(220, 185, 150, 0.2);
+            color: #e8d5c0;
+            padding: 10px 0;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 0.5px;
+            text-align: center;
+            backdrop-filter: blur(4px);
+        }
+        .btn-reset:hover {
+            background: rgba(220, 185, 150, 0.18);
+            border-color: rgba(220, 185, 150, 0.35);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        .btn-reset:active {
+            transform: translateY(0px);
+            box-shadow: none;
+        }
+
+        @media (max-width: 1100px) {
+            .game-container {
+                flex-wrap: wrap;
+                justify-content: center;
+                padding: 20px;
+                gap: 14px;
+            }
+            .capture-side {
+                min-width: 36px;
+                padding: 8px 4px;
+                max-height: 50vh;
+            }
+            .capture-side .capture-stone {
+                width: 28px;
+                height: 28px;
+            }
+            .capture-side .capture-stone.king-mark::after,
+            .capture-side .capture-stone.queen-mark::after,
+            .capture-side .capture-stone.pawn-mark::after {
+                font-size: 12px;
+            }
+            .panel {
+                flex: 1 1 100%;
+                max-width: 100%;
+                min-width: 0;
+            }
+            #boardCanvas {
+                width: min(55vh, 55vw, 500px);
+            }
+            .board-wrapper {
+                order: 1;
+            }
+            .capture-side.left {
+                order: 0;
+            }
+            .capture-side.right {
+                order: 2;
+            }
+            .panel {
+                order: 3;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .game-container {
+                padding: 12px 10px;
+                gap: 10px;
+                border-radius: 28px;
+            }
+            .capture-side {
+                min-width: 30px;
+                padding: 6px 3px;
+                max-height: 40vh;
+                min-height: 60px;
+            }
+            .capture-side .capture-stone {
+                width: 22px;
+                height: 22px;
+            }
+            .capture-side .capture-stone.king-mark::after,
+            .capture-side .capture-stone.queen-mark::after,
+            .capture-side .capture-stone.pawn-mark::after {
+                font-size: 10px;
+            }
+            .capture-side .label {
+                font-size: 10px;
+            }
+            .panel {
+                padding: 16px 14px;
+                gap: 10px;
+            }
+            .panel-title {
+                font-size: 16px;
+                padding-bottom: 8px;
+            }
+            .turn-info {
+                padding: 6px 10px;
+                font-size: 13px;
+            }
+            .turn-dot {
+                width: 20px;
+                height: 20px;
+            }
+            .winrate-row .label {
+                width: 32px;
+                font-size: 12px;
+            }
+            .winrate-value {
+                width: 40px;
+                font-size: 12px;
+            }
+            .btn-reset {
+                padding: 8px 0;
+                font-size: 14px;
+            }
+            .chart-container #chartCanvas {
+                height: 50px;
+            }
+            #boardCanvas {
+                width: min(70vw, 70vh, 400px);
+            }
+            .mode-hint {
+                font-size: 12px;
+                min-height: 22px;
+            }
+            .game-over-msg {
+                font-size: 14px;
+                min-height: 24px;
+            }
+        }
+
+        @media (max-width: 450px) {
+            .capture-side {
+                min-width: 24px;
+                padding: 4px 2px;
+            }
+            .capture-side .capture-stone {
+                width: 18px;
+                height: 18px;
+            }
+            .capture-side .capture-stone.king-mark::after,
+            .capture-side .capture-stone.queen-mark::after,
+            .capture-side .capture-stone.pawn-mark::after {
+                font-size: 8px;
+            }
+            #boardCanvas {
+                width: min(75vw, 75vh, 320px);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- 左侧：俘虏黑子 -->
+        <div class="capture-side left" id="captureBlackSide">
+            <div class="label">⚫ 俘虏</div>
+        </div>
+
+        <!-- 棋盘 -->
+        <div class="board-wrapper">
+            <canvas id="boardCanvas" width="600" height="600"></canvas>
+        </div>
+
+        <!-- 右侧：俘虏白子 -->
+        <div class="capture-side right" id="captureWhiteSide">
+            <div class="label">⚪ 俘虏</div>
+        </div>
+
+        <!-- 右侧面板 -->
+        <div class="panel">
+            <div class="panel-title">
+                <span>♟ 局面评估</span>
+                <span class="badge">实时</span>
+            </div>
+
+            <div class="turn-info">
+                <div class="turn-indicator">
+                    <div class="turn-dot black" id="turnDot"></div>
+                    <span id="turnText">黑方回合</span>
+                </div>
+                <div class="step-count">步数 <strong id="stepCount">0</strong></div>
+            </div>
+
+            <div class="mode-hint" id="modeHint">我不会告诉你任何东西</div>
+
+            <div class="game-over-msg" id="gameOverMsg">&nbsp;</div>
+
+            <div class="winrate-section">
+                <div class="winrate-row">
+                    <div class="label"><span class="stone b"></span>黑</div>
+                    <div class="winrate-track">
+                        <div class="winrate-fill b" id="wrBlackFill" style="width:50%"></div>
+                    </div>
+                    <div class="winrate-value b" id="wrBlackValue">50%</div>
+                </div>
+                <div class="winrate-row">
+                    <div class="label"><span class="stone w"></span>白</div>
+                    <div class="winrate-track">
+                        <div class="winrate-fill w" id="wrWhiteFill" style="width:50%"></div>
+                    </div>
+                    <div class="winrate-value w" id="wrWhiteValue">50%</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">
+                    <span>胜率变化</span>
+                    <span class="legend">
+                        <span class="legend-item"><span class="legend-dot b"></span>黑</span>
+                        <span class="legend-item"><span class="legend-dot w"></span>白</span>
+                    </span>
+                </div>
+                <canvas id="chartCanvas" width="400" height="90"></canvas>
+            </div>
+
+            <button class="btn-reset" id="resetBtn">↻ 重新开局</button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  王棋 · 双人对战  ·  吃子湮灭（进攻方不进入俘虏）
+        // ============================================================
+
+        const BOARD_SIZE = 15;
+        const CELL_SIZE = 38;
+        const PADDING = 30;
+        const KING_RADIUS = 22;
+        const QUEEN_RADIUS = 19;
+        const PAWN_RADIUS = 17;
+        const MAX_HISTORY = 30;
+
+        const BLACK = 'black';
+        const WHITE = 'white';
+
+        // DOM
+        const boardCanvas = document.getElementById('boardCanvas');
+        const ctx = boardCanvas.getContext('2d');
+        const chartCanvas = document.getElementById('chartCanvas');
+        const chartCtx = chartCanvas.getContext('2d');
+
+        const turnDot = document.getElementById('turnDot');
+        const turnText = document.getElementById('turnText');
+        const stepCountEl = document.getElementById('stepCount');
+        const gameOverMsg = document.getElementById('gameOverMsg');
+        const wrBlackFill = document.getElementById('wrBlackFill');
+        const wrWhiteFill = document.getElementById('wrWhiteFill');
+        const wrBlackValue = document.getElementById('wrBlackValue');
+        const wrWhiteValue = document.getElementById('wrWhiteValue');
+        const resetBtn = document.getElementById('resetBtn');
+        const modeHint = document.getElementById('modeHint');
+
+        const captureBlackSide = document.getElementById('captureBlackSide');
+        const captureWhiteSide = document.getElementById('captureWhiteSide');
+
+        // 游戏状态
+        let board = [];
+        let gamePhase = 'placeBlackKing';
+        let currentPlayer = BLACK;
+        let moveCount = 0;
+        let selectedPiece = null;
+        let gameOver = false;
+        let winner = null;
+        let history = [];
+        let lastMove = null;
+        let lastEvalSymbol = null;
+
+        let capturedPieces = []; // { color, type }  type 为 'king', 'queen', 'pawn'（后降级为兵）
+        let placeBackMode = false;
+        let usedPlaceBackThisTurn = false;
+
+        // 棋子类
+        class Piece {
+            constructor(color, type) {
+                this.color = color;
+                this.type = type; // 'king', 'queen', 'pawn'
+                this.row = -1;
+                this.col = -1;
+            }
+        }
+
+        // ---------- 初始化 ----------
+        function initGame() {
+            board = [];
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                board.push(new Array(BOARD_SIZE).fill(null));
+            }
+            gamePhase = 'placeBlackKing';
+            currentPlayer = BLACK;
+            moveCount = 0;
+            selectedPiece = null;
+            gameOver = false;
+            winner = null;
+            history = [{ blackWR: 50, whiteWR: 50 }];
+            lastMove = null;
+            lastEvalSymbol = null;
+            capturedPieces = [];
+            placeBackMode = false;
+            usedPlaceBackThisTurn = false;
+            gameOverMsg.innerHTML = '&nbsp;';
+            renderCapturedPieces();
+            drawBoard();
+            updatePanel();
+        }
+
+        // ---------- 放置王棋 ----------
+        function placeKing(row, col, color) {
+            if (board[row][col]) return false;
+            const piece = new Piece(color, 'king');
+            piece.row = row;
+            piece.col = col;
+            board[row][col] = piece;
+            moveCount++;
+            if (color === BLACK) {
+                gamePhase = 'placeWhiteKing';
+                currentPlayer = WHITE;
+            } else {
+                gamePhase = 'playing';
+                currentPlayer = BLACK;
+            }
+            lastEvalSymbol = null;
+            lastMove = null;
+            usedPlaceBackThisTurn = false;
+            renderCapturedPieces();
+            drawBoard();
+            updatePanel();
+            return true;
+        }
+
+        // ---------- 走法生成 ----------
+        function getMoves(row, col) {
+            const piece = board[row][col];
+            if (!piece) return [];
+            const moves = [];
+            const color = piece.color;
+            let dirs = [];
+            if (piece.type === 'queen') {
+                dirs = [
+                    [-1, -1],
+                    [-1, 0],
+                    [-1, 1],
+                    [0, -1],
+                    [0, 1],
+                    [1, -1],
+                    [1, 0],
+                    [1, 1]
+                ];
+            } else {
+                dirs = [
+                    [-1, 0],
+                    [1, 0],
+                    [0, -1],
+                    [0, 1]
+                ];
+            }
+
+            for (const [dr, dc] of dirs) {
+                let r = row + dr,
+                    c = col + dc;
+                while (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
+                    if (board[r][c]) {
+                        if (board[r][c].color !== color) {
+                            moves.push({ row: r, col: c, capture: true });
+                        }
+                        break;
+                    }
+                    moves.push({ row: r, col: c, capture: false });
+                    if (piece.type !== 'queen') break;
+                    r += dr;
+                    c += dc;
+                }
+            }
+            return moves;
+        }
+
+        // ---------- 五子连珠检测 ----------
+        function checkFiveInRow(color) {
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    const piece = board[r][c];
+                    if (piece && piece.color === color) {
+                        const dirs = [
+                            [0, 1],
+                            [1, 0],
+                            [1, 1],
+                            [1, -1]
+                        ];
+                        for (const [dr, dc] of dirs) {
+                            let count = 1;
+                            for (let i = 1; i < 5; i++) {
+                                const nr = r + dr * i,
+                                    nc = c + dc * i;
+                                if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) break;
+                                if (board[nr][nc] && board[nr][nc].color === color) count++;
+                                else break;
+                            }
+                            for (let i = 1; i < 5; i++) {
+                                const nr = r - dr * i,
+                                    nc = c - dc * i;
+                                if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) break;
+                                if (board[nr][nc] && board[nr][nc].color === color) count++;
+                                else break;
+                            }
+                            if (count >= 5) return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        // ============================================================
+        //  气计算：连通组整体气
+        // ============================================================
+
+        function getGroup(row, col) {
+            const color = board[row][col] ? board[row][col].color : null;
+            if (!color) return [];
+            const visited = new Array(BOARD_SIZE).fill(0).map(() => new Array(BOARD_SIZE).fill(false));
+            const group = [];
+            const queue = [];
+            queue.push({ row, col });
+            visited[row][col] = true;
+            while (queue.length > 0) {
+                const { row: r, col: c } = queue.shift();
+                group.push({ row: r, col: c });
+                const dirs = [
+                    [-1, 0],
+                    [1, 0],
+                    [0, -1],
+                    [0, 1]
+                ];
+                for (const [dr, dc] of dirs) {
+                    const nr = r + dr,
+                        nc = c + dc;
+                    if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && !visited[nr][nc] &&
+                        board[nr][nc] && board[nr][nc].color === color) {
+                        visited[nr][nc] = true;
+                        queue.push({ row: nr, col: nc });
+                    }
+                }
+            }
+            return group;
+        }
+
+        function countGroupLiberties(group) {
+            const libertySet = new Set();
+            for (const { row, col } of group) {
+                const dirs = [
+                    [-1, 0],
+                    [1, 0],
+                    [0, -1],
+                    [0, 1]
+                ];
+                for (const [dr, dc] of dirs) {
+                    const nr = row + dr,
+                        nc = col + dc;
+                    if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && board[nr][nc] === null) {
+                        libertySet.add(nr * BOARD_SIZE + nc);
+                    }
+                }
+            }
+            return libertySet.size;
+        }
+
+        function checkAndRemoveDeadPieces() {
+            let anyRemoved = true;
+            while (anyRemoved) {
+                anyRemoved = false;
+                const toRemove = [];
+                const processed = new Array(BOARD_SIZE).fill(0).map(() => new Array(BOARD_SIZE).fill(false));
+                for (let r = 0; r < BOARD_SIZE; r++) {
+                    for (let c = 0; c < BOARD_SIZE; c++) {
+                        if (board[r][c] && !processed[r][c]) {
+                            const group = getGroup(r, c);
+                            for (const g of group) {
+                                processed[g.row][g.col] = true;
+                            }
+                            const liberties = countGroupLiberties(group);
+                            if (liberties <= 1) {
+                                for (const g of group) {
+                                    toRemove.push({ row: g.row, col: g.col, piece: board[g.row][g.col] });
+                                }
+                            }
+                        }
+                    }
+                }
+                if (toRemove.length > 0) {
+                    anyRemoved = true;
+                    for (const item of toRemove) {
+                        const { row, col, piece } = item;
+                        if (piece.type === 'king') {
+                            gameOver = true;
+                            winner = (piece.color === BLACK) ? WHITE : BLACK;
+                        } else {
+                            let capturedType = piece.type;
+                            if (capturedType === 'queen') capturedType = 'pawn';
+                            capturedPieces.push({ color: piece.color, type: capturedType });
+                        }
+                        board[row][col] = null;
+                    }
+                }
+            }
+        }
+
+        // ---------- 执行移动 ----------
+        function makeMove(fromRow, fromCol, toRow, toCol) {
+            const piece = board[fromRow][fromCol];
+            if (!piece) return false;
+            if (piece.color !== currentPlayer) return false;
+            const moves = getMoves(fromRow, fromCol);
+            const target = moves.find(m => m.row === toRow && m.col === toCol);
+            if (!target) return false;
+
+            const captured = board[toRow][toCol];
+            let capturedKing = false;
+            let movedPiece = null; // 用于记录最终存活的棋子（王吃子时移动）
+
+            // 处理吃子
+            if (captured) {
+                if (piece.type === 'king') {
+                    // 王吃子：王存活，移动到目标格，防守王被吃判负
+                    board[fromRow][fromCol] = null;
+                    board[toRow][toCol] = piece;
+                    piece.row = toRow;
+                    piece.col = toCol;
+                    movedPiece = piece;
+                    if (captured.type === 'king') {
+                        gameOver = true;
+                        winner = piece.color;
+                    } else {
+                        // 防守方进入俘虏（后降级）
+                        let capturedType = captured.type;
+                        if (capturedType === 'queen') capturedType = 'pawn';
+                        capturedPieces.push({ color: captured.color, type: capturedType });
+                    }
+                } else {
+                    // 普通棋子吃子：双方湮灭，进攻方直接消失（不进入俘虏），防守方进入俘虏
+                    board[fromRow][fromCol] = null;
+                    board[toRow][toCol] = null;
+                    movedPiece = null; // 进攻方消失
+                    if (captured.type === 'king') {
+                        gameOver = true;
+                        winner = piece.color; // 吃王方获胜
+                    } else {
+                        let capturedType = captured.type;
+                        if (capturedType === 'queen') capturedType = 'pawn';
+                        capturedPieces.push({ color: captured.color, type: capturedType });
+                    }
+                    // 进攻方不进入俘虏，直接移除
+                }
+            } else {
+                // 普通移动
+                board[fromRow][fromCol] = null;
+                board[toRow][toCol] = piece;
+                piece.row = toRow;
+                piece.col = toCol;
+                movedPiece = piece;
+            }
+
+            // 升变：仅当棋子存活且是兵且到达边缘
+            if (!gameOver && movedPiece && movedPiece.type === 'pawn') {
+                const isEdge = (toRow === 0 || toRow === BOARD_SIZE - 1 || toCol === 0 || toCol === BOARD_SIZE - 1);
+                if (isEdge) {
+                    movedPiece.type = 'queen';
+                }
+            }
+
+            moveCount++;
+
+            // 气检查
+            if (!gameOver) {
+                checkAndRemoveDeadPieces();
+            }
+
+            // 五子连珠（检查当前玩家的颜色，但可能已切换，所以检查移动方颜色）
+            if (!gameOver && movedPiece) {
+                if (checkFiveInRow(movedPiece.color)) {
+                    gameOver = true;
+                    winner = movedPiece.color;
+                }
+            }
+
+            // 记录最后一步（用于显示）
+            if (gameOver) {
+                if (movedPiece && board[toRow] && board[toRow][toCol] === movedPiece) {
+                    lastMove = { from: { row: fromRow, col: fromCol }, to: { row: toRow, col: toCol }, piece: movedPiece,
+                        captured: captured };
+                } else {
+                    lastMove = { from: { row: fromRow, col: fromCol }, to: { row: toRow, col: toCol }, piece: null,
+                        captured: captured };
+                }
+            } else {
+                if (movedPiece && board[toRow] && board[toRow][toCol] === movedPiece) {
+                    lastMove = { from: { row: fromRow, col: fromCol }, to: { row: toRow, col: toCol }, piece: movedPiece,
+                        captured: captured };
+                } else {
+                    lastMove = { from: { row: fromRow, col: fromCol }, to: { row: toRow, col: toCol }, piece: null,
+                        captured: captured };
+                }
+            }
+
+            // 切换玩家（放回后额外一步已处理）
+            if (!gameOver) {
+                if (usedPlaceBackThisTurn) {
+                    usedPlaceBackThisTurn = false;
+                }
+                currentPlayer = (currentPlayer === BLACK) ? WHITE : BLACK;
+            }
+
+            const evalResult = evaluatePosition();
+            if (movedPiece && movedPiece.type !== 'king' && board[toRow] && board[toRow][toCol] === movedPiece) {
+                lastEvalSymbol = evalResult.symbol;
+            } else {
+                lastEvalSymbol = null;
+            }
+            renderCapturedPieces();
+            drawBoard();
+            updatePanel();
+            return true;
+        }
+
+        // ---------- 下新棋子 ----------
+        function placePawn(row, col) {
+            if (board[row][col]) return false;
+            const piece = new Piece(currentPlayer, 'pawn');
+            piece.row = row;
+            piece.col = col;
+            board[row][col] = piece;
+            moveCount++;
+
+            if (!gameOver) {
+                checkAndRemoveDeadPieces();
+            }
+            if (!gameOver && checkFiveInRow(piece.color)) {
+                gameOver = true;
+                winner = piece.color;
+            }
+
+            if (!gameOver) {
+                if (usedPlaceBackThisTurn) {
+                    usedPlaceBackThisTurn = false;
+                }
+                currentPlayer = (currentPlayer === BLACK) ? WHITE : BLACK;
+            }
+
+            const evalResult = evaluatePosition();
+            if (!gameOver) {
+                lastEvalSymbol = evalResult.symbol;
+            } else {
+                if (board[row][col] === piece) lastEvalSymbol = '⭐';
+                else lastEvalSymbol = null;
+            }
+            lastMove = { from: null, to: { row, col }, piece: piece, captured: null };
+            renderCapturedPieces();
+            drawBoard();
+            updatePanel();
+            return true;
+        }
+
+        // ---------- 放回俘虏 ----------
+        function enterPlaceBackMode(color) {
+            if (gameOver || gamePhase !== 'playing') return false;
+            const enemyColor = (currentPlayer === BLACK) ? WHITE : BLACK;
+            if (color !== enemyColor) return false;
+            if (usedPlaceBackThisTurn) return false;
+            const has = capturedPieces.some(p => p.color === color);
+            if (!has) return false;
+
+            placeBackMode = true;
+            modeHint.textContent = '';
+            renderCapturedPieces();
+            drawBoard();
+            updatePanel();
+            return true;
+        }
+
+        function executePlaceBack(row, col) {
+            if (!placeBackMode) return false;
+            if (board[row][col]) return false;
+
+            const enemyColor = (currentPlayer === BLACK) ? WHITE : BLACK;
+            const idx = capturedPieces.findIndex(p => p.color === enemyColor);
+            if (idx === -1) {
+                placeBackMode = false;
+                renderCapturedPieces();
+                drawBoard();
+                updatePanel();
+                return false;
+            }
+
+            const cap = capturedPieces.splice(idx, 1)[0];
+            const piece = new Piece(cap.color, cap.type);
+            piece.row = row;
+            piece.col = col;
+            board[row][col] = piece;
+            moveCount++;
+
+            if (!gameOver) {
+                checkAndRemoveDeadPieces();
+            }
+            if (!gameOver && checkFiveInRow(piece.color)) {
+                gameOver = true;
+                winner = piece.color;
+            }
+
+            usedPlaceBackThisTurn = true;
+            placeBackMode = false;
+
+            lastMove = { from: null, to: { row, col }, piece: piece, captured: null };
+            const evalResult = evaluatePosition();
+            lastEvalSymbol = (piece.type !== 'king') ? evalResult.symbol : null;
+
+            renderCapturedPieces();
+            drawBoard();
+            updatePanel();
+            return true;
+        }
+
+        // ---------- 评价系统 ----------
+        function evaluatePosition() {
+            let blackScore = 0,
+                whiteScore = 0;
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    const piece = board[r][c];
+                    if (!piece) continue;
+                    const score = evaluatePiece(piece);
+                    if (piece.color === BLACK) blackScore += score;
+                    else whiteScore += score;
+                }
+            }
+
+            const blackKing = findKing(BLACK);
+            if (blackKing) {
+                const whiteMoves = getMoves(blackKing.row, blackKing.col).filter(m => board[m.row][m.col] && board[m.row][m.col]
+                    .color === WHITE);
+                if (whiteMoves.length > 0) blackScore -= 100 * whiteMoves.length;
+            }
+            const whiteKing = findKing(WHITE);
+            if (whiteKing) {
+                const blackMoves = getMoves(whiteKing.row, whiteKing.col).filter(m => board[m.row][m.col] && board[m.row][m.col]
+                    .color === BLACK);
+                if (blackMoves.length > 0) whiteScore -= 100 * blackMoves.length;
+            }
+
+            if (gameOver) {
+                if (winner === BLACK) { blackScore += 10000;
+                    whiteScore -= 10000; } else if (winner === WHITE) { whiteScore += 10000;
+                    blackScore -= 10000; }
+            }
+
+            const total = Math.abs(blackScore) + Math.abs(whiteScore) + 1;
+            let blackWR = (blackScore / total) * 100 + 50;
+            let whiteWR = (whiteScore / total) * 100 + 50;
+            blackWR = Math.min(99.9, Math.max(0.1, blackWR));
+            whiteWR = Math.min(99.9, Math.max(0.1, whiteWR));
+            const sum = blackWR + whiteWR;
+            if (sum !== 100) {
+                blackWR = (blackWR / sum) * 100;
+                whiteWR = (whiteWR / sum) * 100;
+            }
+            blackWR = Math.round(blackWR * 10) / 10;
+            whiteWR = Math.round(whiteWR * 10) / 10;
+
+            let symbol;
+            const diff = blackWR - whiteWR;
+            if (gameOver) {
+                if (winner === BLACK || winner === WHITE) symbol = '⭐';
+                else symbol = '•';
+            } else if (diff > 30) symbol = '‼';
+            else if (diff > 15) symbol = '!';
+            else if (diff > 5) symbol = '📖';
+            else if (diff > -5) symbol = '•';
+            else if (diff > -15) symbol = '📖';
+            else if (diff > -30) symbol = '!';
+            else symbol = '‼';
+
+            return { symbol, blackWR, whiteWR };
+        }
+
+        function evaluatePiece(piece) {
+            let score = 0;
+            const row = piece.row,
+                col = piece.col;
+            const centerDist = Math.abs(row - 7) + Math.abs(col - 7);
+            score += (14 - centerDist) * 2;
+            if (piece.type === 'queen') score += 50;
+            if (piece.type === 'king') score += 30;
+            if (piece.type === 'pawn') score += 10;
+            if ((row === 0 || row === BOARD_SIZE - 1 || col === 0 || col === BOARD_SIZE - 1) && piece.type === 'pawn')
+                score += 20;
+            if ((row === 0 || row === BOARD_SIZE - 1) && (col === 0 || col === BOARD_SIZE - 1)) score -= 10;
+            return score;
+        }
+
+        function findKing(color) {
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    const p = board[r][c];
+                    if (p && p.color === color && p.type === 'king') return p;
+                }
+            }
+            return null;
+        }
+
+        // ---------- 渲染俘虏列表 ----------
+        function renderCapturedPieces() {
+            captureBlackSide.innerHTML = '<div class="label">⚫ 俘虏</div>';
+            captureWhiteSide.innerHTML = '<div class="label">⚪ 俘虏</div>';
+
+            const blackCaps = capturedPieces.filter(p => p.color === BLACK);
+            const whiteCaps = capturedPieces.filter(p => p.color === WHITE);
+
+            if (blackCaps.length === 0) {
+                const hint = document.createElement('div');
+                hint.className = 'empty-hint';
+                hint.textContent = '—';
+                captureBlackSide.appendChild(hint);
+            } else {
+                for (const cap of blackCaps) {
+                    const el = document.createElement('div');
+                    el.className = `capture-stone black ${cap.type}-mark`;
+                    el.title = `${cap.type} 俘虏`;
+                    const canPlaceBack = !gameOver && gamePhase === 'playing' && currentPlayer === WHITE &&
+                        !usedPlaceBackThisTurn && cap.color === BLACK;
+                    if (!canPlaceBack) {
+                        el.classList.add('disabled');
+                    } else {
+                        el.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            enterPlaceBackMode(BLACK);
+                        });
+                    }
+                    captureBlackSide.appendChild(el);
+                }
+            }
+
+            if (whiteCaps.length === 0) {
+                const hint = document.createElement('div');
+                hint.className = 'empty-hint';
+                hint.textContent = '—';
+                captureWhiteSide.appendChild(hint);
+            } else {
+                for (const cap of whiteCaps) {
+                    const el = document.createElement('div');
+                    el.className = `capture-stone white ${cap.type}-mark`;
+                    el.title = `${cap.type} 俘虏`;
+                    const canPlaceBack = !gameOver && gamePhase === 'playing' && currentPlayer === BLACK &&
+                        !usedPlaceBackThisTurn && cap.color === WHITE;
+                    if (!canPlaceBack) {
+                        el.classList.add('disabled');
+                    } else {
+                        el.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            enterPlaceBackMode(WHITE);
+                        });
+                    }
+                    captureWhiteSide.appendChild(el);
+                }
+            }
+        }
+
+        // ---------- UI更新 ----------
+        function updatePanel() {
+            stepCountEl.textContent = moveCount;
+
+            if (gameOver) {
+                if (winner === BLACK) {
+                    turnDot.className = 'turn-dot win-black';
+                    turnText.textContent = '黑方赢了！';
+                    gameOverMsg.innerHTML = ' <span class="highlight">黑方</span> 获胜！';
+                } else if (winner === WHITE) {
+                    turnDot.className = 'turn-dot win-white';
+                    turnText.textContent = '白方赢了！';
+                    gameOverMsg.innerHTML = '<span class="highlight">白方</span> 获胜！';
+                } else {
+                    turnDot.className = 'turn-dot';
+                    turnDot.style.background = '#888';
+                    turnText.textContent = '平局';
+                    gameOverMsg.innerHTML = '棋盘已满，平局！';
+                }
+                modeHint.textContent = '游戏已结束';
+            } else {
+                if (currentPlayer === BLACK) {
+                    turnDot.className = 'turn-dot black';
+                    turnText.textContent = '黑方回合';
+                } else {
+                    turnDot.className = 'turn-dot white';
+                    turnText.textContent = '白方回合';
+                }
+                if (gamePhase === 'placeBlackKing') {
+                    gameOverMsg.innerHTML = '放置王棋阶段';
+                    modeHint.textContent = '放置王棋阶段';
+                } else if (gamePhase === 'placeWhiteKing') {
+                    gameOverMsg.innerHTML = '放置王棋阶段';
+                    modeHint.textContent = '放置王棋阶段';
+                } else {
+                    gameOverMsg.innerHTML = '&nbsp;';
+                    if (placeBackMode) {
+                        modeHint.textContent = '';
+                    } else if (usedPlaceBackThisTurn) {
+                        modeHint.textContent = '';
+                    } else {
+                        modeHint.textContent = '';
+                    }
+                }
+            }
+
+            const evalResult = evaluatePosition();
+            wrBlackFill.style.width = evalResult.blackWR + '%';
+            wrWhiteFill.style.width = evalResult.whiteWR + '%';
+            wrBlackValue.textContent = evalResult.blackWR + '%';
+            wrWhiteValue.textContent = evalResult.whiteWR + '%';
+
+            history.push({ blackWR: evalResult.blackWR, whiteWR: evalResult.whiteWR });
+            if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
+            drawChart(history);
+        }
+
+        // ---------- 绘图 ----------
+        function drawBoard() {
+            const size = boardCanvas.width;
+            ctx.clearRect(0, 0, size, size);
+
+            const grad = ctx.createLinearGradient(0, 0, size, size);
+            grad.addColorStop(0, '#d9b382');
+            grad.addColorStop(0.5, '#c8a070');
+            grad.addColorStop(1, '#b89060');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, size, size);
+
+            ctx.save();
+            ctx.globalAlpha = 0.06;
+            for (let i = 0; i < 30; i++) {
+                const x = 10 + i * 20 + Math.sin(i * 0.7) * 8;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x + 40, size);
+                ctx.strokeStyle = '#8a6a4a';
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            ctx.strokeStyle = '#2d1f12';
+            ctx.lineWidth = 1.2;
+            const start = PADDING;
+            const end = PADDING + (BOARD_SIZE - 1) * CELL_SIZE;
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                const pos = PADDING + i * CELL_SIZE;
+                ctx.beginPath();
+                ctx.moveTo(start, pos);
+                ctx.lineTo(end, pos);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(pos, start);
+                ctx.lineTo(pos, end);
+                ctx.stroke();
+            }
+
+            const starPos = [
+                [7, 7],
+                [3, 3],
+                [3, 11],
+                [11, 3],
+                [11, 11]
+            ];
+            ctx.fillStyle = '#2d1f12';
+            for (const [r, c] of starPos) {
+                const x = PADDING + c * CELL_SIZE;
+                const y = PADDING + r * CELL_SIZE;
+                ctx.beginPath();
+                ctx.arc(x, y, 4.5, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    const piece = board[r][c];
+                    if (piece) {
+                        const x = PADDING + c * CELL_SIZE;
+                        const y = PADDING + r * CELL_SIZE;
+                        const isSelected = selectedPiece && selectedPiece.row === r && selectedPiece.col === c;
+                        const isLastMove = lastMove && lastMove.to && lastMove.to.row === r && lastMove.to.col === c;
+                        const showEval = isLastMove && lastEvalSymbol && piece.type !== 'king';
+                        drawPiece(ctx, x, y, piece, isSelected, showEval ? lastEvalSymbol : null);
+                    }
+                }
+            }
+
+            if (selectedPiece) {
+                const moves = getMoves(selectedPiece.row, selectedPiece.col);
+                for (const m of moves) {
+                    const x = PADDING + m.col * CELL_SIZE;
+                    const y = PADDING + m.row * CELL_SIZE;
+                    ctx.save();
+                    ctx.globalAlpha = 0.4;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                    ctx.fillStyle = m.capture ? '#ff4444' : '#44ff44';
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            if (placeBackMode) {
+                for (let r = 0; r < BOARD_SIZE; r++) {
+                    for (let c = 0; c < BOARD_SIZE; c++) {
+                        if (board[r][c] === null) {
+                            const x = PADDING + c * CELL_SIZE;
+                            const y = PADDING + r * CELL_SIZE;
+                            ctx.save();
+                            ctx.globalAlpha = 0.25;
+                            ctx.beginPath();
+                            ctx.arc(x, y, 14, 0, 2 * Math.PI);
+                            ctx.fillStyle = '#ffdd44';
+                            ctx.fill();
+                            ctx.restore();
+                        }
+                    }
+                }
+            }
+
+            ctx.strokeStyle = 'rgba(45, 31, 18, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(PADDING - 6, PADDING - 6, (BOARD_SIZE - 1) * CELL_SIZE + 12, (BOARD_SIZE - 1) * CELL_SIZE + 12);
+        }
+
+        function drawStar(ctx, cx, cy, outerR, innerR, points) {
+            ctx.beginPath();
+            for (let i = 0; i < points * 2; i++) {
+                const radius = i % 2 === 0 ? outerR : innerR;
+                const angle = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
+                const x = cx + Math.cos(angle) * radius;
+                const y = cy + Math.sin(angle) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+        }
+
+        function drawPiece(ctx, x, y, piece, isSelected, evalSymbol) {
+            const color = piece.color;
+            const isKing = piece.type === 'king';
+            const isQueen = piece.type === 'queen';
+            const isPawn = piece.type === 'pawn';
+
+            ctx.save();
+            ctx.shadowColor = 'rgba(0,0,0,0.4)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 3;
+
+            if (isKing) {
+                const radius = KING_RADIUS;
+                const grad = ctx.createRadialGradient(
+                    x - radius * 0.3, y - radius * 0.3, radius * 0.1,
+                    x, y, radius
+                );
+                if (color === BLACK) {
+                    grad.addColorStop(0, '#666');
+                    grad.addColorStop(0.3, '#333');
+                    grad.addColorStop(0.7, '#111');
+                    grad.addColorStop(1, '#000');
+                } else {
+                    grad.addColorStop(0, '#fff');
+                    grad.addColorStop(0.3, '#f0f0f0');
+                    grad.addColorStop(0.7, '#d0d0d0');
+                    grad.addColorStop(1, '#b0b0b0');
+                }
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = grad;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                const hl = ctx.createRadialGradient(
+                    x - radius * 0.3, y - radius * 0.4, radius * 0.05,
+                    x - radius * 0.2, y - radius * 0.3, radius * 0.5
+                );
+                if (color === BLACK) {
+                    hl.addColorStop(0, 'rgba(200,200,200,0.2)');
+                    hl.addColorStop(1, 'rgba(255,255,255,0)');
+                } else {
+                    hl.addColorStop(0, 'rgba(255,255,255,0.6)');
+                    hl.addColorStop(1, 'rgba(255,255,255,0)');
+                }
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = hl;
+                ctx.fill();
+                ctx.strokeStyle = color === BLACK ? 'rgba(0,0,0,0.5)' : 'rgba(160,160,160,0.4)';
+                ctx.lineWidth = 0.8;
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                ctx.stroke();
+
+            } else if (isQueen) {
+                const outerR = QUEEN_RADIUS;
+                const innerR = outerR * 0.4;
+                const grad = ctx.createRadialGradient(
+                    x - outerR * 0.3, y - outerR * 0.3, outerR * 0.1,
+                    x, y, outerR
+                );
+                if (color === BLACK) {
+                    grad.addColorStop(0, '#666');
+                    grad.addColorStop(0.3, '#333');
+                    grad.addColorStop(0.7, '#111');
+                    grad.addColorStop(1, '#000');
+                } else {
+                    grad.addColorStop(0, '#fff');
+                    grad.addColorStop(0.3, '#f0f0f0');
+                    grad.addColorStop(0.7, '#d0d0d0');
+                    grad.addColorStop(1, '#b0b0b0');
+                }
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                drawStar(ctx, x, y, outerR, innerR, 5);
+                ctx.fillStyle = grad;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = color === BLACK ? 'rgba(0,0,0,0.5)' : 'rgba(160,160,160,0.4)';
+                ctx.lineWidth = 0.8;
+                ctx.beginPath();
+                drawStar(ctx, x, y, outerR, innerR, 5);
+                ctx.stroke();
+
+            } else {
+                const radius = PAWN_RADIUS;
+                const grad = ctx.createRadialGradient(
+                    x - radius * 0.3, y - radius * 0.3, radius * 0.1,
+                    x, y, radius
+                );
+                if (color === BLACK) {
+                    grad.addColorStop(0, '#666');
+                    grad.addColorStop(0.3, '#333');
+                    grad.addColorStop(0.7, '#111');
+                    grad.addColorStop(1, '#000');
+                } else {
+                    grad.addColorStop(0, '#fff');
+                    grad.addColorStop(0.3, '#f0f0f0');
+                    grad.addColorStop(0.7, '#d0d0d0');
+                    grad.addColorStop(1, '#b0b0b0');
+                }
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = grad;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                const hl = ctx.createRadialGradient(
+                    x - radius * 0.3, y - radius * 0.4, radius * 0.05,
+                    x - radius * 0.2, y - radius * 0.3, radius * 0.5
+                );
+                if (color === BLACK) {
+                    hl.addColorStop(0, 'rgba(200,200,200,0.2)');
+                    hl.addColorStop(1, 'rgba(255,255,255,0)');
+                } else {
+                    hl.addColorStop(0, 'rgba(255,255,255,0.6)');
+                    hl.addColorStop(1, 'rgba(255,255,255,0)');
+                }
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = hl;
+                ctx.fill();
+                ctx.strokeStyle = color === BLACK ? 'rgba(0,0,0,0.5)' : 'rgba(160,160,160,0.4)';
+                ctx.lineWidth = 0.8;
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+
+            if (isSelected) {
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#f0d080';
+                ctx.strokeStyle = '#f0d080';
+                ctx.lineWidth = 3;
+                const r = isKing ? KING_RADIUS : isQueen ? QUEEN_RADIUS : PAWN_RADIUS;
+                ctx.beginPath();
+                ctx.arc(x, y, r + 4, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+
+            if (evalSymbol && !isKing) {
+                const symbol = evalSymbol;
+                const fontSize = (symbol === '‼' || symbol === '•' || symbol === '📖') ? 14 : 18;
+                const offsetX = 13;
+                const offsetY = -13;
+                const bgR = 13;
+                const bgX = x + offsetX;
+                const bgY = y + offsetY;
+
+                ctx.save();
+                let bgColor = 'rgba(0,0,0,0.7)';
+                let textColor = '#fff';
+                if (symbol === '⭐') { bgColor = 'rgba(200,180,80,0.88)';
+                    textColor = '#1a1400'; } else if (symbol === '‼') { bgColor = 'rgba(200,180,80,0.88)';
+                    textColor = '#1a1400'; } else if (symbol === '!') { bgColor = 'rgba(180,160,80,0.85)';
+                    textColor = '#1a1400'; } else if (symbol === '📖') { bgColor = 'rgba(120,100,70,0.8)';
+                    textColor = '#f0e8d8'; } else if (symbol === '•') { bgColor = 'rgba(80,75,70,0.6)';
+                    textColor = '#c0b8b0'; } else { bgColor = 'rgba(60,55,50,0.7)';
+                    textColor = '#d0c8c0'; }
+
+                ctx.shadowColor = 'rgba(0,0,0,0.6)';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 2;
+
+                ctx.beginPath();
+                ctx.arc(bgX, bgY, bgR, 0, 2 * Math.PI);
+                ctx.fillStyle = bgColor;
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(bgX, bgY, bgR, 0, 2 * Math.PI);
+                ctx.stroke();
+
+                ctx.fillStyle = textColor;
+                ctx.font = `bold ${fontSize}px 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(symbol, bgX, bgY + 1);
+
+                ctx.restore();
+            }
+        }
+
+        // ---------- 图表 ----------
+        function drawChart(data) {
+            const w = chartCanvas.width;
+            const h = chartCanvas.height;
+            const ctx = chartCtx;
+            const pad = { top: 4, bottom: 8, left: 4, right: 4 };
+            const chartW = w - pad.left - pad.right;
+            const chartH = h - pad.top - pad.bottom;
+
+            ctx.clearRect(0, 0, w, h);
+
+            if (data.length < 2) {
+                ctx.fillStyle = '#7a6a5a';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('等待对局数据…', w / 2, h / 2 + 3);
+                return;
+            }
+
+            const xStep = chartW / (data.length - 1);
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i <= 4; i++) {
+                const yPos = pad.top + chartH - (i / 4) * chartH;
+                ctx.beginPath();
+                ctx.moveTo(pad.left, yPos);
+                ctx.lineTo(w - pad.right, yPos);
+                ctx.stroke();
+            }
+
+            const colors = [
+                { key: 'blackWR', stroke: '#666', fill: 'rgba(100,80,60,0.15)', shadow: 'rgba(100,80,60,0.2)' },
+                { key: 'whiteWR', stroke: '#e0d8d0', fill: 'rgba(220,210,200,0.12)', shadow: 'rgba(220,210,200,0.15)' }
+            ];
+
+            for (const color of colors) {
+                const points = data.map((d, idx) => ({
+                    x: pad.left + idx * xStep,
+                    y: pad.top + chartH - ((d[color.key]) / 100) * chartH
+                }));
+
+                ctx.save();
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.moveTo(points[0].x, pad.top + chartH);
+                for (const p of points) {
+                    ctx.lineTo(p.x, p.y);
+                }
+                ctx.lineTo(points[points.length - 1].x, pad.top + chartH);
+                ctx.closePath();
+                ctx.fillStyle = color.fill;
+                ctx.fill();
+                ctx.restore();
+
+                ctx.save();
+                ctx.shadowColor = color.shadow;
+                ctx.shadowBlur = 5;
+                ctx.strokeStyle = color.stroke;
+                ctx.lineWidth = 2;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                for (let i = 0; i < points.length; i++) {
+                    if (i === 0) ctx.moveTo(points[i].x, points[i].y);
+                    else ctx.lineTo(points[i].x, points[i].y);
+                }
+                ctx.stroke();
+                ctx.restore();
+
+                const last = points[points.length - 1];
+                ctx.save();
+                ctx.shadowColor = color.shadow;
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(last.x, last.y, 4, 0, 2 * Math.PI);
+                ctx.fillStyle = color.stroke;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            const lastData = data[data.length - 1];
+            ctx.fillStyle = '#c0b0a0';
+            ctx.font = '8px monospace';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'bottom';
+            const labelX = w - pad.right - 2;
+            const labelY = pad.top + 10;
+            ctx.fillText('黑 ' + lastData.blackWR + '%', labelX, labelY);
+            ctx.fillStyle = '#d0c8c0';
+            ctx.fillText('白 ' + lastData.whiteWR + '%', labelX, labelY + 12);
+        }
+
+        // ---------- 交互 ----------
+        function handleCanvasClick(e) {
+            const rect = boardCanvas.getBoundingClientRect();
+            const scaleX = boardCanvas.width / rect.width;
+            const scaleY = boardCanvas.height / rect.height;
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            const mx = clientX - rect.left;
+            const my = clientY - rect.top;
+            const x = mx * scaleX;
+            const y = my * scaleY;
+            const col = Math.round((x - PADDING) / CELL_SIZE);
+            const row = Math.round((y - PADDING) / CELL_SIZE);
+            if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) return;
+            const dx = Math.abs(x - (PADDING + col * CELL_SIZE));
+            const dy = Math.abs(y - (PADDING + row * CELL_SIZE));
+            if (dx > CELL_SIZE * 0.45 || dy > CELL_SIZE * 0.45) return;
+
+            if (gamePhase === 'placeBlackKing') {
+                if (placeKing(row, col, BLACK)) return;
+            } else if (gamePhase === 'placeWhiteKing') {
+                if (placeKing(row, col, WHITE)) return;
+            }
+
+            if (gameOver || gamePhase !== 'playing') return;
+
+            if (placeBackMode) {
+                if (board[row][col] === null) {
+                    executePlaceBack(row, col);
+                    renderCapturedPieces();
+                    drawBoard();
+                    updatePanel();
+                }
+                return;
+            }
+
+            const piece = board[row][col];
+
+            if (piece && piece.color === currentPlayer) {
+                if (selectedPiece && selectedPiece.row === row && selectedPiece.col === col) {
+                    selectedPiece = null;
+                } else {
+                    selectedPiece = { row, col };
+                }
+                drawBoard();
+                updatePanel();
+                return;
+            }
+
+            if (selectedPiece) {
+                const fromRow = selectedPiece.row,
+                    fromCol = selectedPiece.col;
+                const validMoves = getMoves(fromRow, fromCol);
+                const target = validMoves.find(m => m.row === row && m.col === col);
+                if (target) {
+                    makeMove(fromRow, fromCol, row, col);
+                    selectedPiece = null;
+                    return;
+                } else {
+                    selectedPiece = null;
+                    drawBoard();
+                    updatePanel();
+                    return;
+                }
+            }
+
+            if (!piece) {
+                placePawn(row, col);
+            }
+        }
+
+        boardCanvas.addEventListener('click', handleCanvasClick);
+        boardCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleCanvasClick(e);
+        }, { passive: false });
+
+        // ---------- 重置 ----------
+        resetBtn.addEventListener('click', () => {
+            initGame();
+            history = [{ blackWR: 50, whiteWR: 50 }];
+            drawChart(history);
+            selectedPiece = null;
+            lastEvalSymbol = null;
+            lastMove = null;
+            placeBackMode = false;
+            usedPlaceBackThisTurn = false;
+            renderCapturedPieces();
+        });
+
+        // ---------- 自适应 ----------
+        function resizeCanvases() {
+            const chartContainer = chartCanvas.parentElement;
+            const chartWidth = chartContainer.clientWidth - 16;
+            if (chartWidth > 50) {
+                chartCanvas.style.width = chartWidth + 'px';
+                chartCanvas.style.height = Math.min(70, chartWidth * 0.2) + 'px';
+            }
+            drawChart(history);
+        }
+
+        window.addEventListener('resize', resizeCanvases);
+
+        // ---------- 启动 ----------
+        initGame();
+        history = [{ blackWR: 50, whiteWR: 50 }];
+        drawChart(history);
+        resizeCanvases();
+        setTimeout(resizeCanvases, 100);
+
+    </script>
+
+</body>
+</html>
