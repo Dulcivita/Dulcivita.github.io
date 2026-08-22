@@ -417,7 +417,7 @@
             letter-spacing: 0.06em;
         }
 
-        /* Game 覆盖层 */
+        /* ===== Game 覆盖层（新增卡片） ===== */
         #game-overlay {
             position: fixed;
             top: 0;
@@ -436,20 +436,49 @@
         #game-overlay.active {
             display: flex;
         }
-        .game-content {
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            max-width: 900px;
+            padding: 20px;
+        }
+        .game-card {
+            background: rgba(20, 40, 80, 0.25);
+            border: 1px solid rgba(60, 160, 255, 0.12);
+            border-radius: 12px;
+            padding: 28px 32px 32px 32px;
+            width: 260px;
             text-align: center;
-            color: rgba(176, 212, 255, 0.3);
-            letter-spacing: 0.2em;
+            cursor: pointer;
+            transition: background 0.3s, border-color 0.3s, transform 0.2s;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
         }
-        .game-content h2 {
-            font-size: 32px;
-            font-weight: 300;
-            margin-bottom: 12px;
-            color: rgba(176, 212, 255, 0.4);
+        .game-card:hover {
+            background: rgba(30, 70, 140, 0.30);
+            border-color: rgba(80, 180, 255, 0.30);
+            transform: translateY(-4px);
         }
-        .game-content p {
-            font-size: 14px;
-            color: rgba(176, 212, 255, 0.2);
+        .game-card .card-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .game-card .card-title {
+            font-size: 18px;
+            font-weight: 400;
+            letter-spacing: 0.10em;
+            color: #b0d4ff;
+            margin-top: 6px;
+        }
+        .game-card .card-desc {
+            font-size: 12px;
+            color: rgba(176, 212, 255, 0.35);
+            margin-top: 6px;
+            letter-spacing: 0.06em;
         }
 
         /* 响应式 */
@@ -465,10 +494,10 @@
             .binary-row-load { font-size: clamp(7px, 1.8vw, 16px); }
             .binary-wrapper-load { padding: 4px 10px; }
             .name-load { font-size: clamp(9px, 1.4vw, 16px); padding: 3px 12px; }
-            .tools-container { gap: 24px; padding: 12px; }
-            .tools-card { width: 200px; padding: 20px 18px 24px 18px; }
-            .tools-card .card-icon img { width: 48px; height: 48px; }
-            .tools-card .card-title { font-size: 15px; }
+            .tools-container, .game-container { gap: 24px; padding: 12px; }
+            .tools-card, .game-card { width: 200px; padding: 20px 18px 24px 18px; }
+            .tools-card .card-icon, .game-card .card-icon { font-size: 36px; }
+            .tools-card .card-title, .game-card .card-title { font-size: 15px; }
             .status-hint { display: none; }
         }
         @media (max-width: 480px) {
@@ -485,12 +514,10 @@
             .name-load { font-size: clamp(7px, 1.2vw, 12px); padding: 2px 8px; border-width: 1px; }
             .blob-bg { width: 80vmin; height: 80vmin; filter: blur(60px); }
             .footer-deco-main { display: none; }
-            .tools-card { width: 160px; padding: 16px 12px 18px 12px; }
-            .tools-card .card-icon img { width: 40px; height: 40px; }
-            .tools-card .card-title { font-size: 13px; }
-            .tools-card .card-desc { font-size: 10px; }
-            .game-content h2, .tools-content h2 { font-size: 18px; }
-            .game-content p, .tools-content p { font-size: 11px; }
+            .tools-card, .game-card { width: 160px; padding: 16px 12px 18px 12px; }
+            .tools-card .card-icon, .game-card .card-icon { font-size: 28px; }
+            .tools-card .card-title, .game-card .card-title { font-size: 13px; }
+            .tools-card .card-desc, .game-card .card-desc { font-size: 10px; }
         }
     </style>
 </head>
@@ -534,13 +561,13 @@
         <div class="status-hint" id="statusHint">
             <span id="motionStatus"></span> &nbsp;·&nbsp; <span class="highlight"></span>
         </div>
-        <div class="footer-deco-main"></div>
+        <div class="footer-deco-main">crt ort qpn</div>
     </div>
 
     <!-- Tools 覆盖层 -->
     <div id="tools-overlay">
         <div class="tools-container">
-            <!-- 模拟原神祈愿卡片（点击跳转到 wish.html） -->
+            <!-- 模拟原神祈愿卡片 -->
             <div class="tools-card" id="wishEntry">
                 <span class="card-icon">
                     <img src="qiyuan/yuanshi.png" alt="原神" onerror="this.style.display='none'" />
@@ -548,15 +575,19 @@
                 <div class="card-title">模拟原神祈愿</div>
                 <div class="card-desc">Genshin Wish Simulator</div>
             </div>
-            <!-- 可继续添加其他工具卡片 -->
+            <!-- 可添加更多工具卡片 -->
         </div>
     </div>
 
-    <!-- Game 覆盖层 -->
+    <!-- ===== Game 覆盖层（新增猎棋卡片） ===== -->
     <div id="game-overlay">
-        <div class="game-content">
-            <h2>Game</h2>
-            <p>给木给木给木压力大！</p>
+        <div class="game-container">
+            <div class="game-card" id="curioChessEntry">
+                <span class="card-icon">️</span>
+                <div class="card-title">猎棋 - Curio Chess</div>
+                <div class="card-desc"></div>
+            </div>
+            <!-- 可添加更多游戏卡片 -->
         </div>
     </div>
 
@@ -572,7 +603,7 @@
 
     <script type="module">
         // ============================================================
-        //  1. Three.js 场景（保留原样）
+        //  1. Three.js 场景（完整保留）
         // ============================================================
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -1164,8 +1195,18 @@
             updateStatusDisplay();
         }, 200);
 
+        // ============================================================
+        //  2. 工具卡片跳转
+        // ============================================================
         document.getElementById('wishEntry').addEventListener('click', () => {
             window.location.href = 'wish.html';
+        });
+
+        // ============================================================
+        //  3. 游戏卡片跳转（新增）
+        // ============================================================
+        document.getElementById('curioChessEntry').addEventListener('click', () => {
+            window.location.href = 'CurioChess.html';
         });
     </script>
 
